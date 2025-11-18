@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.teamsx.i230610_i230040">
+
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_CONNECT"
+        android:usesPermissionFlags="neverForLocation"
+        android:required="false" />
+
+    <application
+        android:name=".PresenceApplication"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.SMD_Assignment_1">
+        <activity
+            android:name=".PostViewActivity"
+            android:exported="false" />
+        <activity
+            android:name=".CommentsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".CreatePostScreen"
+            android:exported="false" />
+        <activity
+            android:name=".CreatePostActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AgoraCallActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar" />
+        <activity
+            android:name=".FollowListActivity"
+            android:exported="false" />
+        <activity
+            android:name=".UserSearchActivity"
+            android:exported="false" />
+        <activity
+            android:name=".HomeActivity"
+            android:exported="false" />
+        <activity
+            android:name=".socialhomescreen17"
+            android:exported="false" />
+        <activity
+            android:name=".socialhomescreen16"
+            android:exported="false" />
+        <activity
+            android:name=".socialhomescreen15"
+            android:exported="false" />
+        <activity
+            android:name=".socialhomescreen14"
+            android:exported="false" />
+        <activity
+            android:name=".socialhomescreen13"
+            android:exported="false" />
+        <activity
+            android:name=".socialhomescreen12"
+            android:exported="false" />
+        <activity
+            android:name=".socialhomescreenchat"
+            android:exported="false" />
+        <activity
+            android:name=".socialhomescreen11"
+            android:exported="false" />
+        <activity
+            android:name=".socialhomescreen10"
+            android:exported="false" />
+        <activity
+            android:name=".socialhomescreen9"
+            android:exported="false" />
+        <activity
+            android:name=".socialhomescreen5"
+            android:exported="false" />
+        <activity
+            android:name=".socialhomescreen4"
+            android:exported="false" />
+        <activity
+            android:name=".socialhomescreen3"
+            android:exported="false" />
+        <activity
+            android:name=".mainlogin"
+            android:exported="false" />
+        <activity
+            android:name=".login_splash"
+            android:exported="false" />
+        <activity
+            android:name=".second_page"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

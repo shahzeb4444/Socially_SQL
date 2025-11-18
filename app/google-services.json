@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "167380756781",
+    "project_id": "sociallyfirebase",
+    "storage_bucket": "sociallyfirebase.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:167380756781:android:7aa1a2d053d23479c68ba4",
+        "android_client_info": {
+          "package_name": "com.teamsx.i230610_i230040"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyALxkZYD7RFtmZgkSNlMfJ0TvN5Gt0k51k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

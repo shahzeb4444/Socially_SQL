@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".socialhomescreen17"
+    android:background="#000000">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="40dp"
+        >
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/maincoffeephoto"
+            android:src="@drawable/flowermainphoto"
+            />
+
+
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/circularsettingsicon"
+            android:id="@+id/g1"
+            android:layout_marginTop="10dp"
+            android:layout_marginStart="20dp"
+            />
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/whitecancelicon"
+            android:id="@+id/cancelicon"
+            android:layout_alignParentEnd="true"
+            android:layout_marginRight="25dp"
+            android:layout_marginTop="16dp"
+            />
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/c1"
+            android:id="@+id/g2"
+            android:layout_below="@+id/g1"
+            android:layout_marginStart="40dp"
+            android:layout_marginTop="560dp"
+            />
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/lighticon"
+            android:id="@+id/g3"
+            android:layout_below="@+id/g1"
+            android:layout_toRightOf="@+id/g2"
+            android:layout_marginStart="30dp"
+            android:layout_marginTop="560dp"
+            />
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/shotbutton"
+            android:id="@+id/g4"
+            android:layout_below="@+id/g1"
+            android:layout_toRightOf="@+id/g3"
+            android:layout_marginStart="30dp"
+            android:layout_marginTop="540dp"
+            />
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/changecamera"
+            android:id="@+id/g5"
+            android:layout_below="@+id/g1"
+            android:layout_toRightOf="@+id/g4"
+            android:layout_marginStart="30dp"
+            android:layout_marginTop="566dp"
+            />
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/facemasks"
+            android:id="@+id/g6"
+            android:layout_below="@+id/g1"
+            android:layout_toRightOf="@+id/g5"
+            android:layout_marginStart="30dp"
+            android:layout_marginTop="565dp"
+            />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    </RelativeLayout>
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        >
+        <HorizontalScrollView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/scrollabletext"
+            android:paddingLeft="50dp"
+            >
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+
+            >
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="T Y P E"
+            android:textColor="@color/mainpagesmd"
+            android:fontFamily="@font/osandemedium"
+            android:id="@+id/t1"
+            android:layout_marginTop="20dp"
+            android:textSize="14sp"
+            android:layout_marginStart="20dp"
+            />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="L I V E"
+            android:textColor="@color/mainpagesmd"
+            android:fontFamily="@font/osandemedium"
+            android:layout_toRightOf="@+id/t1"
+            android:id="@+id/t2"
+            android:layout_marginTop="20dp"
+            android:textSize="14sp"
+            android:layout_marginStart="25dp"
+            />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="N O R M A L"
+                android:textColor="@color/mainpagesmd"
+                android:fontFamily="@font/osandemedium"
+                android:textStyle="bold"
+                android:layout_toRightOf="@+id/t2"
+                android:id="@+id/t3"
+                android:layout_marginTop="20dp"
+                android:textSize="14sp"
+                android:layout_marginStart="25dp"
+                />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="B O O M E R A N G"
+                android:textColor="@color/mainpagesmd"
+                android:fontFamily="@font/osandemedium"
+                android:textStyle="bold"
+                android:layout_toRightOf="@+id/t3"
+                android:id="@+id/t4"
+                android:layout_marginTop="20dp"
+                android:textSize="14sp"
+                android:layout_marginStart="25dp"
+                />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="S U P E R Z O O M"
+                android:textColor="@color/mainpagesmd"
+                android:fontFamily="@font/osandemedium"
+                android:textStyle="bold"
+                android:layout_toRightOf="@+id/t4"
+                android:id="@+id/t5"
+                android:layout_marginTop="20dp"
+                android:textSize="14sp"
+                android:layout_marginStart="25dp"
+                />
+        </LinearLayout>
+        </HorizontalScrollView>
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/scrollabletext"
+            android:src="@drawable/brownbottomline"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="46dp"
+            />
+
+
+
+
+
+
+    </RelativeLayout>
+
+</LinearLayout>

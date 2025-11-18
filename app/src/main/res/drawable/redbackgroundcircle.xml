@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+
+    <!-- Fill color -->
+    <solid android:color="@color/mainpagesmd" />
+
+    <!-- Large corner radius to make it pill-like -->
+    <corners android:radius="100dp" />
+
+    <!-- Size of the shape -->
+    <size
+        android:width="27dp"
+        android:height="27dp" />
+
+</shape>

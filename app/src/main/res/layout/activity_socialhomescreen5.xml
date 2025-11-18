@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/mainpagesmd"
+    tools:context=".socialhomescreen5">
+
+    <ImageView
+        android:id="@+id/callerphoto"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/mothercallphoto"
+        android:layout_centerInParent="true"
+        />
+    <TextView
+        android:id="@+id/mothertext"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Mother"
+        android:textColor="#FFFFFF"
+        android:layout_below="@id/callerphoto"
+        android:layout_marginTop="30dp"
+        android:textStyle="bold"
+        android:textSize="20sp"
+        android:layout_marginStart="150dp"
+        />
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/redheart"
+        android:layout_toRightOf="@+id/mothertext"
+        android:layout_below="@+id/callerphoto"
+        android:layout_marginTop="33dp"
+        android:layout_marginStart="10dp"
+
+        />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="03:12"
+        android:textColor="#FFFFFF"
+        android:layout_below="@id/mothertext"
+        android:layout_marginTop="10dp"
+        android:textSize="17sp"
+        android:layout_centerHorizontal="true" />
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/chatcallicon"
+        android:id="@+id/chat"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="50dp"
+        android:layout_marginStart="50dp"
+        />
+    <ImageView
+        android:id="@+id/redcircle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/redcircle"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="50dp"
+        />
+    <ImageView
+
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/phoneputdown"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="57dp"
+        android:layout_alignParentBottom="true"
+        />
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/speakericon"
+        android:layout_toRightOf="@+id/redcircle"
+        android:layout_marginBottom="57dp"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="50dp"
+
+
+        />
+
+
+
+
+</RelativeLayout>

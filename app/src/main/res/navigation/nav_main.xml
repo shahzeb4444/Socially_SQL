@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_main"
+    app:startDestination="@id/nav_home">
+
+    <fragment
+        android:id="@+id/nav_home"
+        android:name="com.teamsx.i230610_i230040.HomeFragment"
+        android:label="Home" />
+
+    <fragment
+        android:id="@+id/nav_search"
+        android:name="com.teamsx.i230610_i230040.SearchFragment"
+        android:label="Search" />
+
+    <!-- Notifications area splits into two sub-screens -->
+    <fragment
+        android:id="@+id/nav_notifications"
+        android:name="com.teamsx.i230610_i230040.NotificationsFollowingFragment"
+        android:label="Following">
+        <action
+            android:id="@+id/action_to_notificationsYou"
+            app:destination="@id/notifications_you" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/notifications_you"
+        android:name="com.teamsx.i230610_i230040.NotificationsYouFragment"
+        android:label="You" />
+
+    <fragment
+        android:id="@+id/nav_profile"
+        android:name="com.teamsx.i230610_i230040.ProfileFragment"
+        android:label="Profile" />
+    <fragment
+        android:id="@+id/other_user_profile"
+        android:name="com.teamsx.i230610_i230040.OtherUserProfileFragment"
+        android:label="Profile">
+        <argument
+            android:name="user_id"
+            app:argType="string" />
+        <argument
+            android:name="username"
+            app:argType="string" />
+    </fragment>
+</navigation>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="mainpagesmd">#8c4849</color>
+    <color name="mainpagefrom">#849a9c</color>
+    <color name="inputfieldbackground">#E9E8E8</color>
+</resources>

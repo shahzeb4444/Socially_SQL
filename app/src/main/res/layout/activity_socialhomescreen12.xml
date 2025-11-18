@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".socialhomescreen12"
+    android:background="#000000">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="20dp">
+
+        <!-- Main story image -->
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/storyImage"
+            android:scaleType="centerCrop"
+            android:src="@drawable/persondrinkingcoffeemainphoto"/>
+
+        <!-- Touch areas for navigation (LEFT and RIGHT split) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:weightSum="2">
+
+            <!-- LEFT TOUCH AREA - Previous Story -->
+            <View
+                android:id="@+id/leftTouchArea"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:clickable="true"
+                android:focusable="true"/>
+
+            <!-- RIGHT TOUCH AREA - Next Story -->
+            <View
+                android:id="@+id/rightTouchArea"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:clickable="true"
+                android:focusable="true"/>
+        </LinearLayout>
+
+        <!-- Progress bars container -->
+        <LinearLayout
+            android:id="@+id/progressBarsContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="10dp"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
+            android:weightSum="1"/>
+
+        <!-- User info section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="25dp"
+            android:gravity="center_vertical"
+            android:paddingStart="25dp"
+            android:paddingEnd="20dp">
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:id="@+id/userProfileImage"
+                android:src="@drawable/craig_love_profile_small"
+                android:scaleType="centerCrop"
+                app:shapeAppearanceOverlay="@style/CircleImage"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="username"
+                android:id="@+id/username"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:layout_marginStart="10dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="4h"
+                android:id="@+id/timeAgo"
+                android:textSize="11sp"
+                android:textColor="@color/mainpagefrom"
+                android:layout_marginStart="8dp"/>
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1"/>
+
+            <ImageView
+                android:id="@+id/closeButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/whitecancelicon"
+                android:clickable="true"
+                android:focusable="true"/>
+        </LinearLayout>
+    </FrameLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:paddingBottom="20dp">
+
+        <EditText
+            android:layout_width="270dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="20dp"
+            android:hint="Send Message"
+            android:id="@+id/inputMessageField"
+            android:textSize="14sp"
+            android:paddingLeft="50dp"
+            android:textColor="@color/mainpagesmd"
+            android:textColorHint="@color/mainpagefrom"
+            android:background="@drawable/circularrectange"/>
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/greycircle2"
+            android:layout_marginStart="26dp"
+            android:layout_marginTop="5dp"/>
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/cameralogo_red"
+            android:layout_marginStart="30dp"
+            android:layout_marginTop="9dp"/>
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@+id/inputMessageField"
+            android:id="@+id/sendIcon"
+            android:src="@drawable/send_icon_red"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="12dp"/>
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@+id/sendIcon"
+            android:id="@+id/dotsIcon"
+            android:src="@drawable/reddots"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="12dp"/>
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/brownbottomline"
+            android:layout_below="@+id/inputMessageField"
+            android:layout_marginTop="26dp"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="4dp"/>
+    </RelativeLayout>
+</LinearLayout>

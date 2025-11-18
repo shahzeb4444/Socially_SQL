@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">SMD_Assignment_1</string>
+    <string name="chat_header">Chat</string>
+    <string name="call_connected">Connected to %1$s</string>
+    <string name="remote_user_joined">Remote participant joined</string>
+    <string name="remote_user_left">Remote participant left</string>
+    <string name="call_error">Agora error: %1$d</string>
+    <string name="call_permissions_denied">Microphone or camera permission is required for calls.</string>
+    <string name="call_missing_parameters">Missing call configuration. Please try again.</string>
+    <string name="video_call_with">Video call with %1$s</string>
+    <string name="voice_call_with">Voice call with %1$s</string>
+    <string name="video_call">Video Call</string>
+    <string name="voice_call">Voice Call</string>
+    <string name="call_initialization_failed">Failed to start Agora engine: %1$s</string>
+    <string name="call_join_failed">Unable to join call. Error code: %1$d</string>
+    <string name="joining_channel">Joining %1$s…</string>
+    <string name="call_connecting">Connecting…</string>
+    <string name="toggle_microphone">Toggle microphone</string>
+    <string name="toggle_video">Toggle camera</string>
+    <string name="switch_camera">Switch camera</string>
+    <string name="end_call">End call</string>
+</resources>

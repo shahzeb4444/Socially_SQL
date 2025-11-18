@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#fff">
+
+    <!-- Header with online status -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:id="@+id/cameralogo"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:src="@drawable/leftshortarrow"
+            android:contentDescription="Back" />
+
+        <TextView
+            android:id="@+id/otherUserNameText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="16dp"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/onlineStatusText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:textColor="#9E9E9E" />
+
+        <ImageView
+            android:id="@+id/voiceCallButton"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginStart="12dp"
+            android:src="@drawable/ic_voice_call"
+            android:contentDescription="@string/voice_call"
+            android:padding="6dp" />
+
+        <ImageView
+            android:id="@+id/videoCallButton"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginStart="8dp"
+            android:src="@drawable/ic_video_call"
+            android:contentDescription="@string/video_call"
+            android:padding="6dp" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#eee" />
+
+    <!-- Messages RecyclerView -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/messagesRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <!-- Input Section -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:layout_marginBottom="25dp"
+        android:gravity="center_vertical"
+        android:background="#f9f9f9">
+
+        <ImageView
+            android:id="@+id/cameraButton"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:src="@drawable/cameralogo"
+            android:contentDescription="Camera"
+            android:scaleType="centerInside"
+            android:padding="6dp" />
+
+        <ImageView
+            android:id="@+id/galleryButton"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginStart="8dp"
+            android:src="@drawable/galleryicon"
+            android:contentDescription="Gallery"
+            android:scaleType="centerInside"
+            android:padding="6dp" />
+
+        <EditText
+            android:id="@+id/messageInput"
+            android:layout_width="0dp"
+            android:layout_height="25dp"
+            android:layout_weight="1"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="8dp"
+            android:hint="Message..."
+            android:background="@drawable/rounded_input"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:textSize="10sp" />
+
+        <ImageView
+            android:id="@+id/sendButton"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:src="@drawable/sendicon"
+            android:contentDescription="Send"
+            android:scaleType="centerInside"
+            android:padding="6dp" />
+    </LinearLayout>
+</LinearLayout>

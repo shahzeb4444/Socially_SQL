@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".socialhomescreen14"
+    android:background="#000000">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="40dp">
+
+        <!-- Main story image -->
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/storyImage"
+            android:scaleType="centerCrop"
+            android:src="@drawable/personskatingmainphoto"/>
+
+        <!-- Progress bars container -->
+        <LinearLayout
+            android:id="@+id/progressBarsContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="10dp"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
+            android:weightSum="1"/>
+
+        <!-- User info section -->
+        <com.google.android.material.imageview.ShapeableImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:id="@+id/userProfileImage"
+            android:layout_below="@id/progressBarsContainer"
+            android:layout_marginTop="10dp"
+            android:layout_marginStart="25dp"
+            android:src="@drawable/g_photo"
+            android:scaleType="centerCrop"
+            app:shapeAppearanceOverlay="@style/CircleImage"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Your Story"
+            android:id="@+id/username"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:layout_toRightOf="@+id/userProfileImage"
+            android:layout_marginTop="27dp"
+            android:layout_marginStart="10dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="4h"
+            android:id="@+id/timeAgo"
+            android:textSize="11sp"
+            android:textColor="#E5F0F0"
+            android:layout_toRightOf="@+id/username"
+            android:layout_marginTop="30dp"
+            android:layout_marginStart="8dp"/>
+
+        <ImageView
+            android:id="@+id/closeButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/whitecancelicon"
+            android:layout_alignParentEnd="true"
+            android:layout_marginEnd="20dp"
+            android:layout_marginTop="33dp"/>
+
+        <!-- Touch areas for navigation -->
+        <View
+            android:id="@+id/leftTouchArea"
+            android:layout_width="150dp"
+            android:layout_height="match_parent"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"/>
+
+        <View
+            android:id="@+id/rightTouchArea"
+            android:layout_width="150dp"
+            android:layout_height="match_parent"
+            android:layout_alignParentEnd="true"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"/>
+
+        <!-- Viewers count (hearts animation placeholder) -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_alignParentBottom="true"
+            android:layout_marginBottom="120dp"
+            android:layout_marginStart="25dp">
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/red_heart"
+                android:alpha="0.4"
+                android:layout_marginBottom="10dp"/>
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/red_heart"
+                android:alpha="0.6"
+                android:layout_marginBottom="10dp"/>
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/red_heart"
+                android:alpha="0.8"/>
+        </LinearLayout>
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        android:paddingBottom="20dp">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/feedsmallicon3"
+            android:layout_marginTop="10dp"
+            android:layout_marginStart="25dp"
+            android:id="@+id/bottombaractivity3"/>
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/feedsmallicon2"
+            android:layout_marginTop="10dp"
+            android:layout_marginStart="35dp"
+            android:id="@+id/bottombaractivity2"/>
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/feedsmallicon1"
+            android:layout_marginTop="10dp"
+            android:layout_marginStart="45dp"
+            android:id="@+id/bottombaractivity"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Activity"
+            android:textSize="12sp"
+            android:textColor="#FFFFFF"
+            android:layout_marginStart="27dp"
+            android:layout_below="@+id/bottombaractivity"
+            android:layout_marginTop="5dp"/>
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/bottombarcreatered"
+            android:layout_marginTop="15dp"
+            android:layout_toRightOf="@id/bottombaractivity"
+            android:layout_marginStart="65dp"
+            android:id="@+id/bottombarcreate"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Create"
+            android:id="@+id/createtext"
+            android:textSize="12sp"
+            android:textColor="#FFFFFF"
+            android:layout_toRightOf="@+id/bottombaractivity"
+            android:layout_marginStart="55dp"
+            android:layout_below="@+id/bottombaractivity"
+            android:layout_marginTop="5dp"/>
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/facebookredlogo"
+            android:layout_marginTop="15dp"
+            android:layout_toRightOf="@id/bottombarcreate"
+            android:layout_marginStart="45dp"
+            android:id="@+id/bottombarbrowse"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Share"
+            android:textSize="12sp"
+            android:textColor="#FFFFFF"
+            android:layout_toRightOf="@+id/bottombarcreate"
+            android:layout_marginStart="40dp"
+            android:layout_below="@+id/bottombaractivity"
+            android:layout_marginTop="5dp"/>
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@+id/bottombarbrowse"
+            android:id="@+id/deleteButton"
+            android:src="@drawable/highlightredlogo"
+            android:layout_marginStart="42dp"
+            android:layout_marginTop="15dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Delete"
+            android:textSize="12sp"
+            android:textColor="#FFFFFF"
+            android:layout_toRightOf="@+id/bottombarbrowse"
+            android:layout_marginStart="38dp"
+            android:layout_below="@+id/bottombaractivity"
+            android:layout_marginTop="5dp"/>
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@+id/deleteButton"
+            android:id="@+id/dotsicon"
+            android:src="@drawable/reddots"
+            android:layout_marginStart="40dp"
+            android:layout_marginTop="13dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="More"
+            android:textSize="12sp"
+            android:textColor="#FFFFFF"
+            android:layout_toRightOf="@+id/deleteButton"
+            android:layout_marginStart="38dp"
+            android:layout_below="@+id/bottombaractivity"
+            android:layout_marginTop="5dp"/>
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/brownbottomline"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@+id/createtext"
+            android:layout_marginTop="25dp"/>
+    </RelativeLayout>
+</LinearLayout>

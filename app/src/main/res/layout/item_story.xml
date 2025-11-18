@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="5dp"
+    android:gravity="center">
+
+    <FrameLayout
+        android:layout_width="70dp"
+        android:layout_height="70dp">
+
+        <!-- Story ring (colorful for unviewed, gray for viewed) -->
+        <ImageView
+            android:id="@+id/storyRing"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:src="@drawable/colorfulstoryoutline"/>
+
+        <!-- User profile image -->
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/userProfileImage"
+            android:layout_width="62dp"
+            android:layout_height="62dp"
+            android:layout_gravity="center"
+            android:scaleType="centerCrop"
+            android:src="@drawable/profile_login_splash_small"
+            app:shapeAppearanceOverlay="@style/CircleImage"/>
+
+        <!-- Plus icon for "Your Story" when user has no stories -->
+        <ImageView
+            android:id="@+id/addStoryIcon"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_gravity="bottom|end"
+            android:layout_marginEnd="5dp"
+            android:layout_marginBottom="5dp"
+            android:background="@drawable/colorfulstoryoutline"
+            android:padding="2dp"
+            android:visibility="gone"/>
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/username"
+        android:layout_width="70dp"
+        android:layout_height="wrap_content"
+        android:text="Username"
+        android:textSize="11sp"
+        android:textColor="@color/mainpagefrom"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:layout_marginTop="2dp"/>
+</LinearLayout>
