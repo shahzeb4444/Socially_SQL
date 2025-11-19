@@ -9,6 +9,7 @@ import android.graphics.BitmapShader
 import android.graphics.Shader
 import android.os.Bundle
 import android.util.Base64
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -25,11 +26,13 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.teamsx.i230610_i230040.utils.UserPreferences
 
 class ProfileFragment : Fragment() {
 
     private val auth by lazy { FirebaseAuth.getInstance() }
     private val db by lazy { FirebaseDatabase.getInstance().reference }
+    private val userPreferences by lazy { UserPreferences(requireContext()) }
 
     private lateinit var profileImageView: ShapeableImageView
     private lateinit var usernameTextView: TextView
@@ -122,11 +125,20 @@ class ProfileFragment : Fragment() {
     }
 
     private fun loadUserProfile() {
-        val uid = auth.currentUser?.uid
+        // Get UID from UserPreferences instead of Firebase Auth
+        val currentUser = userPreferences.getUser()
+        val uid = currentUser?.uid
+
         if (uid == null) {
+            Log.e("ProfileFragment", "User not logged in - UID is null")
             Toast.makeText(requireContext(), "User not logged in", Toast.LENGTH_SHORT).show()
+            // Navigate back to login
+            startActivity(Intent(requireContext(), mainlogin::class.java))
+            requireActivity().finish()
             return
         }
+
+        Log.d("ProfileFragment", "Loading profile for UID: $uid")
 
         db.child("users").child(uid).addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -149,7 +161,8 @@ class ProfileFragment : Fragment() {
     }
 
     private fun loadUserPosts() {
-        val uid = auth.currentUser?.uid ?: return
+        // Get UID from UserPreferences instead of Firebase Auth
+        val uid = userPreferences.getUser()?.uid ?: return
 
         db.child("userPosts").child(uid).addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
