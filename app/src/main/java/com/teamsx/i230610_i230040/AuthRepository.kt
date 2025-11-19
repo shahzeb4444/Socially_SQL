@@ -15,10 +15,11 @@ class AuthRepository {
         email: String,
         password: String,
         username: String,
-        fullName: String
+        fullName: String,
+        profileImageUrl: String? = null
     ): Resource<User> = withContext(Dispatchers.IO) {
         try {
-            val request = RegisterRequest(email, password, username, fullName)
+            val request = RegisterRequest(email, password, username, fullName, profileImageUrl)
             val response = apiService.register(request)
 
             if (response.isSuccessful) {
