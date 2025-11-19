@@ -31,5 +31,40 @@ interface ApiService {
 
     @POST("stories/mark_viewed.php")
     suspend fun markStoryViewed(@Body request: MarkStoryViewedRequest): Response<BaseResponse>
+
+    // Follow System
+    @POST("follow/send_request.php")
+    suspend fun sendFollowRequest(@Body request: SendFollowRequest): Response<FollowActionResponse>
+
+    @POST("follow/cancel_request.php")
+    suspend fun cancelFollowRequest(@Body request: SendFollowRequest): Response<FollowActionResponse>
+
+    @POST("follow/accept_request.php")
+    suspend fun acceptFollowRequest(@Body request: SendFollowRequest): Response<FollowActionResponse>
+
+    @POST("follow/reject_request.php")
+    suspend fun rejectFollowRequest(@Body request: SendFollowRequest): Response<FollowActionResponse>
+
+    @POST("follow/unfollow.php")
+    suspend fun unfollowUser(@Body request: SendFollowRequest): Response<FollowActionResponse>
+
+    @POST("follow/get_followers.php")
+    suspend fun getFollowers(@Body request: GetFollowersRequest): Response<GetFollowersResponse>
+
+    @POST("follow/get_following.php")
+    suspend fun getFollowing(@Body request: GetFollowersRequest): Response<GetFollowingResponse>
+
+    @POST("follow/get_requests.php")
+    suspend fun getFollowRequests(@Body request: GetFollowRequestsRequest): Response<GetFollowRequestsResponse>
+
+    // User Profile & Search
+    @POST("users/search.php")
+    suspend fun searchUsers(@Body request: SearchUsersRequest): Response<SearchUsersResponse>
+
+    @POST("user/get_profile.php")
+    suspend fun getUserProfile(@Body request: GetUserProfileRequest): Response<GetUserProfileResponse>
+
+    @POST("user/update_profile.php")
+    suspend fun updateUserProfile(@Body request: UpdateProfileRequest): Response<UpdateProfileResponse>
 }
 

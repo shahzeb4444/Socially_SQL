@@ -197,3 +197,148 @@ data class BaseResponse(
     @SerializedName("error") val error: String? = null
 )
 
+// ============================================================
+// FOLLOW SYSTEM REQUEST/RESPONSE MODELS
+// ============================================================
+
+data class SendFollowRequest(
+    @SerializedName("from_uid") val fromUid: String,
+    @SerializedName("to_uid") val toUid: String
+)
+
+data class FollowActionResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("data") val data: FollowActionData? = null,
+    @SerializedName("error") val error: String? = null
+)
+
+data class FollowActionData(
+    @SerializedName("message") val message: String,
+    @SerializedName("from_uid") val fromUid: String? = null,
+    @SerializedName("to_uid") val toUid: String? = null
+)
+
+data class GetFollowersRequest(
+    @SerializedName("uid") val uid: String
+)
+
+data class GetFollowersResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("data") val data: FollowersDataWrapper? = null,
+    @SerializedName("error") val error: String? = null
+)
+
+data class FollowersDataWrapper(
+    @SerializedName("followers") val followers: List<ApiFollowUser>,
+    @SerializedName("count") val count: Int
+)
+
+data class GetFollowingResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("data") val data: FollowingDataWrapper? = null,
+    @SerializedName("error") val error: String? = null
+)
+
+data class FollowingDataWrapper(
+    @SerializedName("following") val following: List<ApiFollowUser>,
+    @SerializedName("count") val count: Int
+)
+
+data class ApiFollowUser(
+    @SerializedName("uid") val uid: String,
+    @SerializedName("username") val username: String,
+    @SerializedName("full_name") val fullName: String?,
+    @SerializedName("profile_image_url") val profileImageUrl: String?
+)
+
+data class GetFollowRequestsRequest(
+    @SerializedName("uid") val uid: String
+)
+
+data class GetFollowRequestsResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("data") val data: FollowRequestsDataWrapper? = null,
+    @SerializedName("error") val error: String? = null
+)
+
+data class FollowRequestsDataWrapper(
+    @SerializedName("requests") val requests: List<ApiFollowRequest>,
+    @SerializedName("count") val count: Int
+)
+
+data class ApiFollowRequest(
+    @SerializedName("from_uid") val fromUid: String,
+    @SerializedName("username") val username: String,
+    @SerializedName("full_name") val fullName: String?,
+    @SerializedName("profile_image_url") val profileImageUrl: String?,
+    @SerializedName("created_at") val createdAt: String
+)
+
+// ============================================================
+// USER SEARCH/PROFILE REQUEST/RESPONSE MODELS
+// ============================================================
+
+data class SearchUsersRequest(
+    @SerializedName("query") val query: String,
+    @SerializedName("current_user_uid") val currentUserUid: String = ""
+)
+
+data class SearchUsersResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("data") val data: SearchUsersDataWrapper? = null,
+    @SerializedName("error") val error: String? = null
+)
+
+data class SearchUsersDataWrapper(
+    @SerializedName("users") val users: List<ApiFollowUser>,
+    @SerializedName("count") val count: Int
+)
+
+data class GetUserProfileRequest(
+    @SerializedName("uid") val uid: String,
+    @SerializedName("current_uid") val currentUid: String? = null
+)
+
+data class GetUserProfileResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("data") val data: UserProfileDataWrapper? = null,
+    @SerializedName("error") val error: String? = null
+)
+
+data class UserProfileDataWrapper(
+    @SerializedName("user") val user: ApiUserProfile,
+    @SerializedName("relationship") val relationship: String? = null
+)
+
+data class ApiUserProfile(
+    @SerializedName("uid") val uid: String,
+    @SerializedName("username") val username: String,
+    @SerializedName("full_name") val fullName: String? = null,
+    @SerializedName("bio") val bio: String? = null,
+    @SerializedName("profile_image_url") val profileImageUrl: String? = null,
+    @SerializedName("cover_image_url") val coverImageUrl: String? = null,
+    @SerializedName("followers_count") val followersCount: Int = 0,
+    @SerializedName("following_count") val followingCount: Int = 0,
+    @SerializedName("posts_count") val postsCount: Int = 0,
+    @SerializedName("created_at") val createdAt: String? = null
+)
+
+data class UpdateProfileRequest(
+    @SerializedName("uid") val uid: String,
+    @SerializedName("full_name") val fullName: String? = null,
+    @SerializedName("bio") val bio: String? = null,
+    @SerializedName("profile_image_url") val profileImageUrl: String? = null,
+    @SerializedName("cover_image_url") val coverImageUrl: String? = null
+)
+
+data class UpdateProfileResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("data") val data: UpdateProfileDataWrapper? = null,
+    @SerializedName("error") val error: String? = null
+)
+
+data class UpdateProfileDataWrapper(
+    @SerializedName("user") val user: ApiUserProfile,
+    @SerializedName("message") val message: String
+)
+
