@@ -59,12 +59,12 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun register(email: String, password: String, username: String, fullName: String) {
+    fun register(email: String, password: String, username: String, fullName: String, profileImageUrl: String? = null) {
         viewModelScope.launch {
             _isLoading.value = true
             _registerResult.value = Resource.Loading()
 
-            val result = authRepository.register(email, password, username, fullName)
+            val result = authRepository.register(email, password, username, fullName, profileImageUrl)
             _registerResult.value = result
             _isLoading.value = false
 

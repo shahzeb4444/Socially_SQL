@@ -37,6 +37,7 @@
               <option value="78e5de69-e995-47e6-a19f-e66f7dede167" />
               <option value="81ea5230-d669-4eec-b5c2-e3bb87bf40af" />
               <option value="9480f1d5-85eb-41f4-acdb-a97e9295f954" />
+              <option value="99adb4b7-5e71-4850-afe7-f50fbd9d4a0c" />
               <option value="9cfc963c-844f-47cc-8fba-2eea9b63fdce" />
               <option value="a7688fa2-d340-4dba-9515-b946c87c9032" />
               <option value="acdb4ad0-e2e3-4fbd-a5b6-c6514c0a818a" />
@@ -61,27 +62,11 @@
       <entry key="ae9ab481-32ec-4a94-a17f-12bd24b83900" />
       <entry key="c1bd36a0-0ed8-4e22-861e-6caa06b5e549">
         <set>
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/HomeFragment.kt" />
-          <option value="file://$PROJECT_DIR$/PHP_MYSQL_INTEGRATION_GUIDE.md" />
-          <option value="file://$PROJECT_DIR$/ERRORS_FIXED_SUMMARY.md" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/UserSearchActivity.kt" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/socialhomescreen4.kt" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/socialhomescreenchat.kt" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/socialhomescreen15.kt" />
-          <option value="file://$PROJECT_DIR$/app/src/main/AndroidManifest.xml" />
-          <option value="file://$PROJECT_DIR$/app/src/main/res/xml/network_security_config.xml" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/network/RetrofitInstance.kt" />
-          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/config/database.php" />
-          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/utils/response.php" />
-          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/models/User.php" />
-          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/endpoints/auth/register.php" />
-          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/endpoints/auth/login.php" />
-          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/setup_database.sql" />
-          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/test_connection.php" />
-          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/index.php" />
-          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/test.php" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/network/ApiModels.kt" />
           <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/AuthRepository.kt" />
-          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/test_connection.bat" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/AuthViewModel.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/second_page.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/login_splash.kt" />
         </set>
       </entry>
     </pendingWorkingSetItems>

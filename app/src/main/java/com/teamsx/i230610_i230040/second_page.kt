@@ -157,7 +157,7 @@ class second_page : AppCompatActivity() {
         }
 
         // Call ViewModel register
-        viewModel.register(email, pass, username, fullName)
+        viewModel.register(email, pass, username, fullName, photoBase64)
     }
 
     private fun toBase64(bitmap: Bitmap, quality: Int): String {
