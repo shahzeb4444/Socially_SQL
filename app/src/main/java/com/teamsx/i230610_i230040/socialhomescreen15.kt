@@ -1,7 +1,6 @@
 package com.teamsx.i230610_i230040
 
 import android.content.Intent
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
@@ -14,13 +13,15 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import com.google.firebase.database.FirebaseDatabase
+import androidx.lifecycle.ViewModelProvider
+import com.teamsx.i230610_i230040.network.Resource
 import com.teamsx.i230610_i230040.utils.UserPreferences
+import com.teamsx.i230610_i230040.viewmodels.StoryViewModel
 
 class socialhomescreen15 : AppCompatActivity() {
 
-    private val db by lazy { FirebaseDatabase.getInstance().reference }
     private val userPreferences by lazy { UserPreferences(this) }
+    private lateinit var storyViewModel: StoryViewModel
 
     private lateinit var imageContainer: FrameLayout
     private lateinit var selectedImage: ImageView
@@ -30,7 +31,6 @@ class socialhomescreen15 : AppCompatActivity() {
     private lateinit var closeFriendsBtn: ImageView
 
     private var selectedImageBase64: String? = null
-    private var isPosting = false
 
     private val pickImage = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri ?: return@registerForActivityResult
@@ -56,6 +56,8 @@ class socialhomescreen15 : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_socialhomescreen15)
 
+        storyViewModel = ViewModelProvider(this)[StoryViewModel::class.java]
+
         // Handle back press
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -65,6 +67,7 @@ class socialhomescreen15 : AppCompatActivity() {
 
         initViews()
         setupClickListeners()
+        observeViewModel()
     }
 
     private fun initViews() {
@@ -86,18 +89,51 @@ class socialhomescreen15 : AppCompatActivity() {
         }
 
         yourStoryBtn.setOnClickListener {
-            if (selectedImageBase64 != null && !isPosting) {
+            if (selectedImageBase64 != null) {
                 postStory(isCloseFriendsOnly = false)
-            } else if (selectedImageBase64 == null) {
+            } else {
                 Toast.makeText(this, "Please select a photo first", Toast.LENGTH_SHORT).show()
             }
         }
 
         closeFriendsBtn.setOnClickListener {
-            if (selectedImageBase64 != null && !isPosting) {
+            if (selectedImageBase64 != null) {
                 postStory(isCloseFriendsOnly = true)
-            } else if (selectedImageBase64 == null) {
+            } else {
                 Toast.makeText(this, "Please select a photo first", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun observeViewModel() {
+
+        storyViewModel.createStoryState.observe(this) { resource ->
+            when (resource) {
+                is Resource.Loading<*> -> {
+                    yourStoryBtn.isEnabled = false
+                    closeFriendsBtn.isEnabled = false
+                }
+                is Resource.Success<*> -> {
+                    yourStoryBtn.isEnabled = true
+                    closeFriendsBtn.isEnabled = true
+                    Toast.makeText(this, "Story posted!", Toast.LENGTH_SHORT).show()
+
+                    startActivity(
+                        Intent(this, HomeActivity::class.java).apply {
+                            putExtra(HomeActivity.EXTRA_START_DEST, R.id.nav_home)
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                        }
+                    )
+                    finish()
+                }
+                is Resource.Error<*> -> {
+                    yourStoryBtn.isEnabled = true
+                    closeFriendsBtn.isEnabled = true
+                    Toast.makeText(this, "Failed to post story: ${resource.message}", Toast.LENGTH_SHORT).show()
+                }
+                null -> {
+                    // Initial state, do nothing
+                }
             }
         }
     }
@@ -109,58 +145,24 @@ class socialhomescreen15 : AppCompatActivity() {
             return
         }
 
-        val uid = currentUser.uid
-        isPosting = true
+        val imageBase64 = selectedImageBase64
+        if (imageBase64 == null) {
+            Toast.makeText(this, "Please select a photo first", Toast.LENGTH_SHORT).show()
+            return
+        }
 
-        // Get user profile from Firebase
-        db.child("users").child(uid).get()
-            .addOnSuccessListener { snapshot ->
-                val userProfile = snapshot.getValue(UserProfile::class.java)
+        val storyId = StoryUtils.generateStoryId()
+        val timestamp = System.currentTimeMillis()
+        val expiresAt = StoryUtils.getExpiryTime()
 
-                if (userProfile == null) {
-                    Toast.makeText(this, "User profile not found", Toast.LENGTH_SHORT).show()
-                    isPosting = false
-                    return@addOnSuccessListener
-                }
-
-                val storyId = StoryUtils.generateStoryId()
-                val story = Story(
-                    storyId = storyId,
-                    userId = uid,
-                    username = userProfile.username,
-                    userPhotoBase64 = userProfile.photoBase64 ?: "",
-                    imageBase64 = selectedImageBase64 ?: "",
-                    timestamp = System.currentTimeMillis(),
-                    expiresAt = StoryUtils.getExpiryTime(),
-                    viewedBy = emptyMap(),
-                    isCloseFreindsOnly = isCloseFriendsOnly
-                )
-
-                // Post story to Firebase
-                db.child("stories").child(uid).child(storyId).setValue(story)
-                    .addOnSuccessListener {
-                        Toast.makeText(
-                            this,
-                            if (isCloseFriendsOnly) "Posted to Close Friends!" else "Story posted!",
-                            Toast.LENGTH_SHORT
-                        ).show()
-
-                        startActivity(
-                            Intent(this, HomeActivity::class.java).apply {
-                                putExtra(HomeActivity.EXTRA_START_DEST, R.id.nav_home)
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                            }
-                        )
-                        finish()
-                    }
-                    .addOnFailureListener { error ->
-                        Toast.makeText(this, "Failed to post story: ${error.message}", Toast.LENGTH_SHORT).show()
-                        isPosting = false
-                    }
-            }
-            .addOnFailureListener { error ->
-                Toast.makeText(this, "Failed to load user profile: ${error.message}", Toast.LENGTH_SHORT).show()
-                isPosting = false
-            }
+        // Create story via API
+        storyViewModel.createStory(
+            storyId = storyId,
+            userId = currentUser.uid,
+            imageBase64 = imageBase64,
+            timestamp = timestamp,
+            expiresAt = expiresAt,
+            isCloseFriendsOnly = isCloseFriendsOnly
+        )
     }
 }
