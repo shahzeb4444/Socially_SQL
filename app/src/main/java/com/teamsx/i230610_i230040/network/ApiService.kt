@@ -66,5 +66,11 @@ interface ApiService {
 
     @POST("user/update_profile.php")
     suspend fun updateUserProfile(@Body request: UpdateProfileRequest): Response<UpdateProfileResponse>
+
+    // Push Notifications
+    @POST("notifications/save_fcm_token.php")
+    suspend fun saveFCMToken(@Body request: SaveFCMTokenRequest): Response<SaveFCMTokenResponse>
 }
+
+
 

@@ -3,19 +3,23 @@ package com.teamsx.i230610_i230040
 import android.os.Bundle
 import android.view.*
 import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.imageview.ShapeableImageView
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.*
 import android.util.Base64
 import android.graphics.BitmapFactory
+import android.util.Log
+import com.teamsx.i230610_i230040.network.Resource
+import com.teamsx.i230610_i230040.utils.UserPreferences
+import com.teamsx.i230610_i230040.viewmodels.FollowViewModel
 
 class NotificationsYouFragment : Fragment() {
 
-    private val auth by lazy { FirebaseAuth.getInstance() }
-    private val db by lazy { FirebaseDatabase.getInstance().reference }
+    private val followViewModel: FollowViewModel by viewModels()
+    private val userPreferences by lazy { UserPreferences(requireContext()) }
 
     private lateinit var rvReq: RecyclerView
     private lateinit var rvAct: RecyclerView
@@ -26,128 +30,155 @@ class NotificationsYouFragment : Fragment() {
     private lateinit var reqAdapter: RequestsAdapter
     private lateinit var actAdapter: ActivityAdapter
 
-    private var reqListener: ValueEventListener? = null
-    private var actListener: ValueEventListener? = null
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
-        inflater.inflate(R.layout.fragment_notifications_you, container, false)
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        return try {
+            inflater.inflate(R.layout.fragment_notifications_you, container, false)
+        } catch (e: Exception) {
+            Log.e("NotificationsYou", "Error inflating layout", e)
+            null
+        }
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        view.findViewById<TextView>(R.id.followingtext).setOnClickListener {
-            // back to "Following" tab
-            requireActivity().onBackPressedDispatcher.onBackPressed()
-        }
+        super.onViewCreated(view, savedInstanceState)
 
-        rvReq = view.findViewById(R.id.rvFollowRequests)
-        rvReq.layoutManager = LinearLayoutManager(requireContext())
-        reqAdapter = RequestsAdapter(requests,
-            onAccept = { req -> accept(req) },
-            onReject = { req -> reject(req) }
-        )
-        rvReq.adapter = reqAdapter
-
-        rvAct = view.findViewById(R.id.rvFollowActivity)
-        rvAct.layoutManager = LinearLayoutManager(requireContext())
-        actAdapter = ActivityAdapter(activities)
-        rvAct.adapter = actAdapter
-
-        observeRequests()
-        observeActivity()
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        val uid = auth.currentUser?.uid ?: return
-        reqListener?.let { db.child("follow_requests").child(uid).removeEventListener(it) }
-        actListener?.let { db.child("follow_activity").child(uid).removeEventListener(it) }
-    }
-
-    private fun observeRequests() {
-        val uid = auth.currentUser?.uid ?: return
-        val ref = db.child("follow_requests").child(uid)
-        reqListener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                requests.clear()
-                for (c in snapshot.children) {
-                    c.getValue(FollowRequest::class.java)?.let { requests.add(it) }
-                }
-                requests.sortByDescending { it.timestamp }
-                reqAdapter.notifyDataSetChanged()
+        try {
+            view.findViewById<TextView>(R.id.followingtext)?.setOnClickListener {
+                requireActivity().onBackPressedDispatcher.onBackPressed()
             }
-            override fun onCancelled(error: DatabaseError) {}
-        }
-        ref.addValueEventListener(reqListener as ValueEventListener)
-    }
 
-    private fun observeActivity() {
-        val uid = auth.currentUser?.uid ?: return
-        val ref = db.child("follow_activity").child(uid)
-        actListener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                activities.clear()
-                for (c in snapshot.children) {
-                    c.getValue(FollowActivity::class.java)?.let { activities.add(it) }
-                }
-                activities.sortByDescending { it.timestamp }
-                actAdapter.notifyDataSetChanged()
-            }
-            override fun onCancelled(error: DatabaseError) {}
-        }
-        ref.addValueEventListener(actListener as ValueEventListener)
-    }
-
-    private fun accept(req: FollowRequest) {
-        val targetUid = auth.currentUser?.uid ?: return
-        val requesterUid = req.fromUid
-
-        val actId = db.child("follow_activity").child(targetUid).push().key!!
-
-        val updates = hashMapOf<String, Any?>(
-            // link follows
-            "/follows/$requesterUid/following/$targetUid" to true,
-            "/follows/$targetUid/followers/$requesterUid" to true,
-            // relationship swap
-            "/relationships/$requesterUid/$targetUid" to "following",
-            "/relationships/$targetUid/$requesterUid" to "followed_by",
-            // remove the request
-            "/follow_requests/$targetUid/$requesterUid" to null,
-            // add permanent activity
-            "/follow_activity/$targetUid/$actId" to FollowActivity(
-                fromUid = requesterUid,
-                fromUsername = req.fromUsername,
-                fromPhotoBase64 = req.fromPhotoBase64,
-                type = "followed_you",
-                timestamp = System.currentTimeMillis()
+            rvReq = view.findViewById(R.id.rvFollowRequests)
+            rvReq.layoutManager = LinearLayoutManager(requireContext())
+            reqAdapter = RequestsAdapter(requests,
+                onAccept = { req -> acceptRequest(req) },
+                onReject = { req -> rejectRequest(req) }
             )
-        )
+            rvReq.adapter = reqAdapter
 
-        db.updateChildren(updates).addOnSuccessListener {
-            // bump counts
-            db.child("users").child(targetUid).child("followersCount").runTransaction(incrementBy(1))
-            db.child("users").child(requesterUid).child("followingCount").runTransaction(incrementBy(1))
+            rvAct = view.findViewById(R.id.rvFollowActivity)
+            rvAct.layoutManager = LinearLayoutManager(requireContext())
+            actAdapter = ActivityAdapter(activities)
+            rvAct.adapter = actAdapter
+
+            setupObservers()
+            loadFollowRequests()
+        } catch (e: Exception) {
+            Log.e("NotificationsYou", "Error in onViewCreated", e)
+            Toast.makeText(requireContext(), "Error loading notifications", Toast.LENGTH_SHORT).show()
         }
     }
 
-    private fun reject(req: FollowRequest) {
-        val targetUid = auth.currentUser?.uid ?: return
-        val requesterUid = req.fromUid
-        val updates = hashMapOf<String, Any?>(
-            "/follow_requests/$targetUid/$requesterUid" to null,
-            "/relationships/$requesterUid/$targetUid" to "none",
-            "/relationships/$targetUid/$requesterUid" to "none"
-        )
-        db.updateChildren(updates)
+    override fun onResume() {
+        super.onResume()
+        try {
+            loadFollowRequests()
+        } catch (e: Exception) {
+            Log.e("NotificationsYou", "Error in onResume", e)
+        }
     }
 
-    private fun incrementBy(delta: Int) = object : Transaction.Handler {
-        override fun doTransaction(mutableData: MutableData): Transaction.Result {
-            val cur = (mutableData.getValue(Int::class.java) ?: 0)
-            var next = cur + delta
-            if (next < 0) next = 0
-            mutableData.value = next
-            return Transaction.success(mutableData)
+    private fun setupObservers() {
+        try {
+            followViewModel.followRequests.observe(viewLifecycleOwner) { resource ->
+                when (resource) {
+                    is Resource.Success -> {
+                        requests.clear()
+                        resource.data?.forEach { apiRequest ->
+                            // Skip requests with null or empty fromUid
+                            if (apiRequest.fromUid.isNullOrEmpty()) {
+                                Log.w("NotificationsYou", "Skipping request with null/empty fromUid")
+                                return@forEach
+                            }
+
+                            try {
+                                requests.add(
+                                    FollowRequest(
+                                        fromUid = apiRequest.fromUid ?: "",
+                                        fromUsername = apiRequest.username ?: "Unknown",
+                                        fromPhotoBase64 = apiRequest.profileImageUrl,
+                                        timestamp = System.currentTimeMillis()
+                                    )
+                                )
+                            } catch (e: Exception) {
+                                Log.e("NotificationsYou", "Error creating FollowRequest", e)
+                            }
+                        }
+                        Log.d("NotificationsYou", "Loaded ${requests.size} follow requests")
+                        reqAdapter.notifyDataSetChanged()
+                    }
+                    is Resource.Error -> {
+                        Log.e("NotificationsYou", "Error loading requests: ${resource.message}")
+                        Toast.makeText(requireContext(), resource.message ?: "Failed to load requests", Toast.LENGTH_SHORT).show()
+                    }
+                    is Resource.Loading -> {
+                        // Show loading if needed
+                    }
+                    else -> {}
+                }
+            }
+
+            followViewModel.followActionResult.observe(viewLifecycleOwner) { resource ->
+                when (resource) {
+                    is Resource.Success -> {
+                        Toast.makeText(requireContext(), resource.data?.message ?: "Action completed", Toast.LENGTH_SHORT).show()
+                        loadFollowRequests() // Reload the list
+                    }
+                    is Resource.Error -> {
+                        Toast.makeText(requireContext(), resource.message ?: "Action failed", Toast.LENGTH_SHORT).show()
+                    }
+                    is Resource.Loading -> {
+                        // Show loading
+                    }
+                    else -> {}
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("NotificationsYou", "Error setting up observers", e)
         }
-        override fun onComplete(error: DatabaseError?, committed: Boolean, snapshot: DataSnapshot?) {}
+    }
+
+    private fun loadFollowRequests() {
+        try {
+            val currentUid = userPreferences.getUser()?.uid
+            if (currentUid.isNullOrEmpty()) {
+                Log.e("NotificationsYou", "User UID is null or empty")
+                Toast.makeText(requireContext(), "User not logged in", Toast.LENGTH_SHORT).show()
+                return
+            }
+            Log.d("NotificationsYou", "Loading follow requests for user: $currentUid")
+            followViewModel.getFollowRequests(currentUid)
+        } catch (e: Exception) {
+            Log.e("NotificationsYou", "Error loading follow requests", e)
+            Toast.makeText(requireContext(), "Error loading requests", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun acceptRequest(req: FollowRequest) {
+        try {
+            val currentUid = userPreferences.getUser()?.uid
+            if (currentUid.isNullOrEmpty()) {
+                Toast.makeText(requireContext(), "User not logged in", Toast.LENGTH_SHORT).show()
+                return
+            }
+            followViewModel.acceptFollowRequest(req.fromUid, currentUid)
+        } catch (e: Exception) {
+            Log.e("NotificationsYou", "Error accepting request", e)
+            Toast.makeText(requireContext(), "Error accepting request", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun rejectRequest(req: FollowRequest) {
+        try {
+            val currentUid = userPreferences.getUser()?.uid
+            if (currentUid.isNullOrEmpty()) {
+                Toast.makeText(requireContext(), "User not logged in", Toast.LENGTH_SHORT).show()
+                return
+            }
+            followViewModel.rejectFollowRequest(req.fromUid, currentUid)
+        } catch (e: Exception) {
+            Log.e("NotificationsYou", "Error rejecting request", e)
+            Toast.makeText(requireContext(), "Error rejecting request", Toast.LENGTH_SHORT).show()
+        }
     }
 }
 
@@ -186,7 +217,11 @@ private class RequestsVH(
             runCatching {
                 val bytes = Base64.decode(req.fromPhotoBase64, Base64.DEFAULT)
                 avatar.setImageBitmap(BitmapFactory.decodeByteArray(bytes, 0, bytes.size))
+            }.onFailure {
+                avatar.setImageResource(R.drawable.profile_login_splash_small)
             }
+        } else {
+            avatar.setImageResource(R.drawable.profile_login_splash_small)
         }
         accept.setOnClickListener { onAccept(req) }
         reject.setOnClickListener { onReject(req) }
@@ -216,7 +251,11 @@ private class ActivityVH(itemView: View) : RecyclerView.ViewHolder(itemView) {
             runCatching {
                 val bytes = Base64.decode(act.fromPhotoBase64, Base64.DEFAULT)
                 avatar.setImageBitmap(BitmapFactory.decodeByteArray(bytes, 0, bytes.size))
+            }.onFailure {
+                avatar.setImageResource(R.drawable.profile_login_splash_small)
             }
+        } else {
+            avatar.setImageResource(R.drawable.profile_login_splash_small)
         }
     }
 }

@@ -267,11 +267,11 @@ data class FollowRequestsDataWrapper(
 )
 
 data class ApiFollowRequest(
-    @SerializedName("from_uid") val fromUid: String,
-    @SerializedName("username") val username: String,
+    @SerializedName("from_uid") val fromUid: String?,
+    @SerializedName("username") val username: String?,
     @SerializedName("full_name") val fullName: String?,
     @SerializedName("profile_image_url") val profileImageUrl: String?,
-    @SerializedName("created_at") val createdAt: String
+    @SerializedName("created_at") val createdAt: String?
 )
 
 // ============================================================
@@ -341,4 +341,25 @@ data class UpdateProfileDataWrapper(
     @SerializedName("user") val user: ApiUserProfile,
     @SerializedName("message") val message: String
 )
+
+// ============================================================
+// FCM PUSH NOTIFICATION MODELS
+// ============================================================
+
+data class SaveFCMTokenRequest(
+    @SerializedName("uid") val uid: String,
+    @SerializedName("fcm_token") val fcmToken: String
+)
+
+data class SaveFCMTokenResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("data") val data: FCMTokenDataWrapper? = null,
+    @SerializedName("error") val error: String? = null
+)
+
+data class FCMTokenDataWrapper(
+    @SerializedName("message") val message: String,
+    @SerializedName("uid") val uid: String
+)
+
 

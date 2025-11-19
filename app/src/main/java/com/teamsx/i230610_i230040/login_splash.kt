@@ -5,11 +5,18 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.util.Base64
+import android.util.Log
 import android.widget.*
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
+import com.google.firebase.messaging.FirebaseMessaging
+import com.teamsx.i230610_i230040.network.RetrofitInstance
+import com.teamsx.i230610_i230040.network.SaveFCMTokenRequest
 import com.teamsx.i230610_i230040.utils.UserPreferences
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class login_splash : AppCompatActivity() {
 
@@ -41,6 +48,9 @@ class login_splash : AppCompatActivity() {
         val user = userPreferences.getUser()
         if (user != null) {
             profilename.text = user.username
+
+            // Get and save FCM token
+            getFCMTokenAndSave(user.uid)
 
             // Load profile picture
             if (!user.profileImageUrl.isNullOrEmpty()) {
@@ -97,6 +107,50 @@ class login_splash : AppCompatActivity() {
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             startActivity(intent)
             finish()
+        }
+    }
+
+    private fun getFCMTokenAndSave(uid: String) {
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val token = task.result
+                Log.d("FCM", "FCM Token: $token")
+
+                // Save locally
+                userPreferences.saveFCMToken(token)
+
+                // Save to server
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        val request = SaveFCMTokenRequest(uid, token)
+                        val response = RetrofitInstance.apiService.saveFCMToken(request)
+
+                        Log.d("FCM", "Response code: ${response.code()}")
+                        Log.d("FCM", "Response successful: ${response.isSuccessful}")
+
+                        if (response.isSuccessful) {
+                            val body = response.body()
+                            if (body == null) {
+                                Log.e("FCM", "Response body is null")
+                            } else {
+                                Log.d("FCM", "Response success: ${body.success}, error: ${body.error}")
+                                if (body.success) {
+                                    Log.d("FCM", "Token saved to server successfully")
+                                } else {
+                                    Log.e("FCM", "Failed to save token: ${body.error}")
+                                }
+                            }
+                        } else {
+                            Log.e("FCM", "HTTP error: ${response.code()}, message: ${response.message()}")
+                        }
+                    } catch (e: Exception) {
+                        Log.e("FCM", "Error saving token: ${e.message}", e)
+                        e.printStackTrace()
+                    }
+                }
+            } else {
+                Log.e("FCM", "Failed to get FCM token", task.exception)
+            }
         }
     }
 
