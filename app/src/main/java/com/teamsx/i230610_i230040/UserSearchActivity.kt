@@ -15,7 +15,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.firebase.database.*
+import com.google.firebase.database.FirebaseDatabase
+import com.teamsx.i230610_i230040.utils.UserPreferences
 
 class UserSearchActivity : AppCompatActivity() {
 
@@ -28,7 +29,8 @@ class UserSearchActivity : AppCompatActivity() {
     private lateinit var emptyView: TextView
     private lateinit var adapter: UsersAdapter
 
-    private lateinit var dbRef: DatabaseReference
+    private val db by lazy { FirebaseDatabase.getInstance().reference }
+    private val userPreferences by lazy { UserPreferences(this) }
     private val allUsers = mutableListOf<UserRow>()   // full list loaded once
     private val filtered = mutableListOf<UserRow>()   // filtered list shown
 
@@ -48,28 +50,20 @@ class UserSearchActivity : AppCompatActivity() {
         // Optional back action
         findViewById<ImageView>(R.id.btnBack)?.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
 
-        dbRef = FirebaseDatabase.getInstance().getReference("users")
-
-        // 1) Load once
-        dbRef.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
+        // Load all users from Firebase
+        loadAllUsers { users, error ->
+            if (error != null) {
+                emptyView.isVisible = true
+                emptyView.text = "Failed to load users."
+            } else {
                 allUsers.clear()
-                for (child in snapshot.children) {
-                    val uid = child.key ?: continue
-                    val username = child.child("username").getValue(String::class.java) ?: continue
-                    val b64 = child.child("photoBase64").getValue(String::class.java)
-                    allUsers.add(UserRow(uid, username, b64))
-                }
+                allUsers.addAll(users)
                 // initial filter using incoming query (if any)
                 val initial = intent?.getStringExtra(EXTRA_QUERY).orEmpty()
                 searchField.setText(initial)
                 applyFilter(initial)
             }
-            override fun onCancelled(error: DatabaseError) {
-                emptyView.isVisible = true
-                emptyView.text = "Failed to load users."
-            }
-        })
+        }
 
         // 2) Filter live as user types
         searchField.addTextChangedListener(object : TextWatcher {
@@ -99,6 +93,29 @@ class UserSearchActivity : AppCompatActivity() {
             emptyView.text = if (filtered.isEmpty()) "No accounts found" else ""
         }
         adapter.notifyDataSetChanged()
+    }
+
+    private fun loadAllUsers(callback: (List<UserRow>, String?) -> Unit) {
+        db.child("users").get()
+            .addOnSuccessListener { snapshot ->
+                val users = mutableListOf<UserRow>()
+                for (userSnap in snapshot.children) {
+                    val uid = userSnap.key ?: continue
+                    val profile = userSnap.getValue(UserProfile::class.java) ?: continue
+
+                    if (profile.username.isNotBlank()) {
+                        users.add(UserRow(
+                            uid = uid,
+                            username = profile.username,
+                            photoBase64 = profile.photoBase64
+                        ))
+                    }
+                }
+                callback(users, null)
+            }
+            .addOnFailureListener { error ->
+                callback(emptyList(), error.message)
+            }
     }
 }
 

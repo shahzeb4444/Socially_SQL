@@ -23,7 +23,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -31,6 +30,7 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ServerValue
 import com.google.firebase.database.ValueEventListener
+import com.teamsx.i230610_i230040.utils.UserPreferences
 import java.util.Locale
 
 class socialhomescreenchat : AppCompatActivity() {
@@ -44,15 +44,22 @@ class socialhomescreenchat : AppCompatActivity() {
     private lateinit var videoCallButton: ImageView
     private lateinit var otherUserNameText: TextView
     private lateinit var onlineStatusText: TextView
-    private lateinit var database: DatabaseReference
     private lateinit var messageAdapter: MessageAdapter
     private val messagesList = mutableListOf<Message>()
+
+    private val db by lazy { FirebaseDatabase.getInstance().reference }
+    private val userPreferences by lazy { UserPreferences(this) }
 
     private lateinit var chatId: String
     private lateinit var otherUserName: String
     private lateinit var otherUserId: String
-    private val currentUserId: String by lazy { FirebaseAuth.getInstance().currentUser?.uid ?: "" }
-    private val currentUsername: String by lazy { FirebaseAuth.getInstance().currentUser?.displayName ?: "Anonymous" }
+    private val currentUserId: String by lazy { userPreferences.getUser()?.uid ?: "" }
+    private val currentUsername: String by lazy { userPreferences.getUser()?.username ?: "Anonymous" }
+
+    // Database reference for chat messages
+    private val database: DatabaseReference by lazy {
+        FirebaseDatabase.getInstance().reference.child("chats").child(chatId)
+    }
 
     private var photoUri: Uri? = null
     private var otherUserStatusListener: ValueEventListener? = null
@@ -182,9 +189,8 @@ class socialhomescreenchat : AppCompatActivity() {
         recyclerView.adapter = messageAdapter
 
         // Database reference
-        database = FirebaseDatabase.getInstance().reference.child("messages").child(chatId)
         if (currentUserId.isNotEmpty()) {
-            val userStatusRef = FirebaseDatabase.getInstance().reference.child("users").child(currentUserId)
+            val userStatusRef = db.child("users").child(currentUserId)
             userStatusRef.child("isOnline").onDisconnect().setValue(false)
             userStatusRef.child("lastSeen").onDisconnect().setValue(ServerValue.TIMESTAMP)
         }

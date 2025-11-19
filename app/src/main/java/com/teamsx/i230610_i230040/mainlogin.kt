@@ -3,32 +3,42 @@ package com.teamsx.i230610_i230040
 import android.content.Intent
 import android.os.Bundle
 import android.util.Patterns
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import com.google.firebase.auth.FirebaseAuth
+import androidx.lifecycle.ViewModelProvider
+import com.teamsx.i230610_i230040.network.Resource
 
 class mainlogin : AppCompatActivity() {
 
-    private lateinit var auth: FirebaseAuth
+    private lateinit var viewModel: AuthViewModel
+    private lateinit var progressBar: ProgressBar
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_mainlogin)
 
-        // Views (adjust IDs if your XML uses different ones)
-        val emailEt    = findViewById<EditText>(R.id.usernamefield)       // your "Username" field should be email
-        val passwordEt = findViewById<EditText>(R.id.passwordfield)
-        val loginBtn   = findViewById<Button>(R.id.loginbutton)
-        val signupTv   = findViewById<TextView>(R.id.signup)
-        val back       = findViewById<ImageView>(R.id.back)
+        // Initialize ViewModel
+        viewModel = ViewModelProvider(this)[AuthViewModel::class.java]
 
-        auth = FirebaseAuth.getInstance()
+        // Views
+        val emailEt = findViewById<EditText>(R.id.usernamefield)
+        val passwordEt = findViewById<EditText>(R.id.passwordfield)
+        val loginBtn = findViewById<Button>(R.id.loginbutton)
+        val signupTv = findViewById<TextView>(R.id.signup)
+        val back = findViewById<ImageView>(R.id.back)
+
+        // Create ProgressBar programmatically if not in XML
+        progressBar = ProgressBar(this).apply {
+            visibility = View.GONE
+        }
 
         back.setOnClickListener { finish() }
 
@@ -37,40 +47,59 @@ class mainlogin : AppCompatActivity() {
             startActivity(Intent(this, second_page::class.java))
         }
 
-        // Log in
-        loginBtn.setOnClickListener {
-            val email = emailEt.text.toString().trim()
-            val pass  = passwordEt.text.toString()
+        // Observe loading state
+        viewModel.isLoading.observe(this) { isLoading ->
+            loginBtn.isEnabled = !isLoading
+            loginBtn.text = if (isLoading) "Logging in..." else "Login"
+        }
 
-            // basic validation
-            if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                emailEt.error = "Enter a valid email"
-                return@setOnClickListener
-            }
-            if (pass.length < 6) {
-                passwordEt.error = "Min 6 characters"
-                return@setOnClickListener
-            }
-
-            // disable to prevent double taps
-            loginBtn.isEnabled = false
-
-            auth.signInWithEmailAndPassword(email, pass).addOnCompleteListener { task ->
-                loginBtn.isEnabled = true
-                if (task.isSuccessful) {
-                    // go to your main/home screen
+        // Observe login result
+        viewModel.loginResult.observe(this) { result ->
+            when (result) {
+                is Resource.Success -> {
+                    Toast.makeText(this, "Login successful!", Toast.LENGTH_SHORT).show()
+                    // Navigate to login splash screen
                     val intent = Intent(this, login_splash::class.java)
                     intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                     startActivity(intent)
                     finish()
-                } else {
-                    Toast.makeText(
-                        this,
-                        task.exception?.localizedMessage ?: "Login failed",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                }
+                is Resource.Error -> {
+                    Toast.makeText(this, result.message ?: "Login failed", Toast.LENGTH_LONG).show()
+                }
+                is Resource.Loading -> {
+                    // Loading state handled by isLoading observer
                 }
             }
+        }
+
+        // Observe error messages
+        viewModel.errorMessage.observe(this) { error ->
+            error?.let {
+                Toast.makeText(this, it, Toast.LENGTH_LONG).show()
+                viewModel.clearError()
+            }
+        }
+
+        // Log in button click
+        loginBtn.setOnClickListener {
+            val email = emailEt.text.toString().trim()
+            val pass = passwordEt.text.toString()
+
+            // Validation
+            if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                emailEt.error = "Enter a valid email"
+                emailEt.requestFocus()
+                return@setOnClickListener
+            }
+            if (pass.length < 6) {
+                passwordEt.error = "Password must be at least 6 characters"
+                passwordEt.requestFocus()
+                return@setOnClickListener
+            }
+
+            // Call ViewModel login
+            viewModel.login(email, pass)
         }
     }
 }
