@@ -14,13 +14,13 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
+import com.teamsx.i230610_i230040.utils.UserPreferences
 
 class socialhomescreen15 : AppCompatActivity() {
 
-    private val auth by lazy { FirebaseAuth.getInstance() }
     private val db by lazy { FirebaseDatabase.getInstance().reference }
+    private val userPreferences by lazy { UserPreferences(this) }
 
     private lateinit var imageContainer: FrameLayout
     private lateinit var selectedImage: ImageView
@@ -103,17 +103,16 @@ class socialhomescreen15 : AppCompatActivity() {
     }
 
     private fun postStory(isCloseFriendsOnly: Boolean) {
-        val currentUser = auth.currentUser
+        val currentUser = userPreferences.getUser()
         if (currentUser == null) {
             Toast.makeText(this, "Please log in first", Toast.LENGTH_SHORT).show()
             return
         }
 
-        isPosting = true
-        Toast.makeText(this, "Posting story...", Toast.LENGTH_SHORT).show()
-
         val uid = currentUser.uid
+        isPosting = true
 
+        // Get user profile from Firebase
         db.child("users").child(uid).get()
             .addOnSuccessListener { snapshot ->
                 val userProfile = snapshot.getValue(UserProfile::class.java)
@@ -129,7 +128,7 @@ class socialhomescreen15 : AppCompatActivity() {
                     storyId = storyId,
                     userId = uid,
                     username = userProfile.username,
-                    userPhotoBase64 = userProfile.photoBase64,
+                    userPhotoBase64 = userProfile.photoBase64 ?: "",
                     imageBase64 = selectedImageBase64 ?: "",
                     timestamp = System.currentTimeMillis(),
                     expiresAt = StoryUtils.getExpiryTime(),
@@ -137,6 +136,7 @@ class socialhomescreen15 : AppCompatActivity() {
                     isCloseFreindsOnly = isCloseFriendsOnly
                 )
 
+                // Post story to Firebase
                 db.child("stories").child(uid).child(storyId).setValue(story)
                     .addOnSuccessListener {
                         Toast.makeText(
@@ -153,13 +153,13 @@ class socialhomescreen15 : AppCompatActivity() {
                         )
                         finish()
                     }
-                    .addOnFailureListener { e ->
-                        Toast.makeText(this, "Failed to post story: ${e.message}", Toast.LENGTH_SHORT).show()
+                    .addOnFailureListener { error ->
+                        Toast.makeText(this, "Failed to post story: ${error.message}", Toast.LENGTH_SHORT).show()
                         isPosting = false
                     }
             }
-            .addOnFailureListener { e ->
-                Toast.makeText(this, "Failed to load user profile: ${e.message}", Toast.LENGTH_SHORT).show()
+            .addOnFailureListener { error ->
+                Toast.makeText(this, "Failed to load user profile: ${error.message}", Toast.LENGTH_SHORT).show()
                 isPosting = false
             }
     }

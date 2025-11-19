@@ -4,6 +4,7 @@
     <option name="migrationStatus" value="IN_PROGRESS" />
     <option name="pendingSessionIds">
       <option value="ae9ab481-32ec-4a94-a17f-12bd24b83900" />
+      <option value="c1bd36a0-0ed8-4e22-861e-6caa06b5e549" />
     </option>
     <option name="pendingTurns">
       <map>
@@ -17,10 +18,72 @@
             </set>
           </value>
         </entry>
+        <entry key="c1bd36a0-0ed8-4e22-861e-6caa06b5e549">
+          <value>
+            <set>
+              <option value="00e06a60-dfd2-4b5e-8c90-f3064f3e786f" />
+              <option value="085689a8-030d-4330-b7bb-9ea1bc53e45b" />
+              <option value="08695b57-c460-47ad-843a-02ff34fcd92d" />
+              <option value="0a421800-b082-4ffa-b404-600dc8648de4" />
+              <option value="1214ba4a-d460-44c0-a32c-b5c412b1136c" />
+              <option value="1f599a2c-d318-4c87-9b12-04a457206ef5" />
+              <option value="226be9e9-4ca0-4f4d-b331-5d76f07e5925" />
+              <option value="598e369f-b223-444a-a8ed-784f34259082" />
+              <option value="5a8126a0-c6ef-499b-a9e1-4af59a695549" />
+              <option value="5fd528c7-2c76-423a-b279-a9e7a3a76735" />
+              <option value="69054a7f-b8db-4d70-887a-638deb8c0b3f" />
+              <option value="6a7c08f1-594a-4bf5-8cc6-e25f2185b0f3" />
+              <option value="72d57017-68d6-4d51-aade-d34341facce4" />
+              <option value="78e5de69-e995-47e6-a19f-e66f7dede167" />
+              <option value="81ea5230-d669-4eec-b5c2-e3bb87bf40af" />
+              <option value="9480f1d5-85eb-41f4-acdb-a97e9295f954" />
+              <option value="9cfc963c-844f-47cc-8fba-2eea9b63fdce" />
+              <option value="a7688fa2-d340-4dba-9515-b946c87c9032" />
+              <option value="acdb4ad0-e2e3-4fbd-a5b6-c6514c0a818a" />
+              <option value="adb9df8f-ae8a-4045-ab55-05e4282be044" />
+              <option value="bd7f2b5c-c936-48f7-884f-f36426fa5e65" />
+              <option value="c261d281-48e7-4e4d-af6a-5500b601f294" />
+              <option value="c568c11b-f782-4be3-ad54-e677739831cd" />
+              <option value="ca6e7cc3-e8fa-4236-ad7e-cfdd421dce1b" />
+              <option value="cae1c589-f9dd-47e8-9a89-e5f233275a69" />
+              <option value="cc30e007-4c87-4921-941d-9f7efedba913" />
+              <option value="cf620ce0-e513-46b3-aa54-9020229540fc" />
+              <option value="d48dbb65-edb9-4c85-b51b-1f04f71fbb5e" />
+              <option value="e9cf9610-2ed0-48ac-b89d-4af835ced523" />
+              <option value="f215be78-df14-4e85-b5b0-b2c663a7a98f" />
+              <option value="fd573760-17e9-43fe-bcad-2fdaf0ade708" />
+            </set>
+          </value>
+        </entry>
       </map>
     </option>
     <pendingWorkingSetItems>
       <entry key="ae9ab481-32ec-4a94-a17f-12bd24b83900" />
+      <entry key="c1bd36a0-0ed8-4e22-861e-6caa06b5e549">
+        <set>
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/HomeFragment.kt" />
+          <option value="file://$PROJECT_DIR$/PHP_MYSQL_INTEGRATION_GUIDE.md" />
+          <option value="file://$PROJECT_DIR$/ERRORS_FIXED_SUMMARY.md" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/UserSearchActivity.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/socialhomescreen4.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/socialhomescreenchat.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/socialhomescreen15.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/AndroidManifest.xml" />
+          <option value="file://$PROJECT_DIR$/app/src/main/res/xml/network_security_config.xml" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/network/RetrofitInstance.kt" />
+          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/config/database.php" />
+          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/utils/response.php" />
+          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/models/User.php" />
+          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/endpoints/auth/register.php" />
+          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/endpoints/auth/login.php" />
+          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/setup_database.sql" />
+          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/test_connection.php" />
+          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/index.php" />
+          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/test.php" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/AuthRepository.kt" />
+          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/test_connection.bat" />
+        </set>
+      </entry>
     </pendingWorkingSetItems>
   </component>
 </project>

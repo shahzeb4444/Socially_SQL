@@ -9,25 +9,26 @@ import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.*
+import com.google.firebase.database.FirebaseDatabase
+import com.teamsx.i230610_i230040.utils.UserPreferences
 
 class socialhomescreen4 : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var searchField: EditText
-    private lateinit var database: DatabaseReference
+    private val db by lazy { FirebaseDatabase.getInstance().reference }
+    private val userPreferences by lazy { UserPreferences(this) }
     private val usersList = mutableListOf<Pair<String, UserProfile>>() // Pair<uid, UserProfile>
     private val allUsers = mutableListOf<Pair<String, UserProfile>>() // All users for search filtering
 
     // Class-level variable for logged-in user's UID
-    private val currentUserId: String by lazy { FirebaseAuth.getInstance().currentUser?.uid ?: "" }
+    private val currentUserId: String by lazy { userPreferences.getUser()?.uid ?: "" }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_socialhomescreen4)
 
-        database = FirebaseDatabase.getInstance().reference.child("users")
+
         recyclerView = findViewById(R.id.userRecyclerView)
         searchField = findViewById(R.id.searchField)
         recyclerView.layoutManager = LinearLayoutManager(this)
@@ -72,21 +73,19 @@ class socialhomescreen4 : AppCompatActivity() {
     private fun loadUsers() {
         if (currentUserId.isEmpty()) return  // safety check
 
-        database.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
+        db.child("users").get()
+            .addOnSuccessListener { snapshot ->
                 usersList.clear()
                 allUsers.clear()
-                val addedUserIds = mutableSetOf<String>() // Track added users to prevent duplicates
+                val addedUserIds = mutableSetOf<String>()
 
                 for (userSnap in snapshot.children) {
                     val uid = userSnap.key ?: continue
-                    if (uid == currentUserId) continue // skip self
-                    if (addedUserIds.contains(uid)) continue // skip duplicates
-
                     val profile = userSnap.getValue(UserProfile::class.java) ?: continue
 
-                    // Skip users with empty or blank usernames
-                    if (profile.username.isBlank()) continue
+                    if (uid == currentUserId) continue // skip self
+                    if (addedUserIds.contains(uid)) continue // skip duplicates
+                    if (profile.username.isBlank()) continue // Skip users with empty or blank usernames
 
                     usersList.add(Pair(uid, profile))
                     addedUserIds.add(uid)
@@ -98,9 +97,9 @@ class socialhomescreen4 : AppCompatActivity() {
 
                 updateRecyclerView(allUsers)
             }
-
-            override fun onCancelled(error: DatabaseError) {}
-        })
+            .addOnFailureListener {
+                // Handle error silently or show toast
+            }
     }
 
     private fun updateRecyclerView(users: List<Pair<String, UserProfile>>) {

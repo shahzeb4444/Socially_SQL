@@ -11,13 +11,13 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.*
+import com.google.firebase.database.FirebaseDatabase
+import com.teamsx.i230610_i230040.utils.UserPreferences
 
 class HomeFragment : Fragment() {
 
-    private val auth by lazy { FirebaseAuth.getInstance() }
     private val db by lazy { FirebaseDatabase.getInstance().reference }
+    private val userPreferences by lazy { UserPreferences(requireContext()) }
 
     private lateinit var storiesRecyclerView: RecyclerView
     private lateinit var postsRecyclerView: RecyclerView
@@ -70,7 +70,7 @@ class HomeFragment : Fragment() {
             false
         )
 
-        val currentUserId = auth.currentUser?.uid ?: ""
+        val currentUserId = getCurrentUserId() ?: ""
 
         storiesAdapter = StoriesAdapter(
             stories = storyGroups,
@@ -90,7 +90,7 @@ class HomeFragment : Fragment() {
         postsRecyclerView = view.findViewById(R.id.postsRecyclerView)
         postsRecyclerView.layoutManager = LinearLayoutManager(requireContext())
 
-        val currentUserId = auth.currentUser?.uid ?: ""
+        val currentUserId = getCurrentUserId() ?: ""
 
         postsAdapter = PostsAdapter(
             posts = posts,
@@ -113,18 +113,13 @@ class HomeFragment : Fragment() {
     }
 
     private fun loadStories() {
-        val currentUserId = auth.currentUser?.uid ?: return
+        val currentUserId = getCurrentUserId() ?: return
 
-        db.child("follows").child(currentUserId).child("following")
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(followingSnapshot: DataSnapshot) {
-                    val followingIds = followingSnapshot.children.mapNotNull { it.key }.toMutableList()
-                    followingIds.add(0, currentUserId)
-                    loadStoriesForUsers(followingIds, currentUserId)
-                }
-
-                override fun onCancelled(error: DatabaseError) {}
-            })
+        getFollowingUsers(currentUserId) { followingIds ->
+            if (followingIds != null) {
+                loadStoriesForUsers(followingIds, currentUserId)
+            }
+        }
     }
 
     private fun loadStoriesForUsers(userIds: List<String>, currentUserId: String) {
@@ -138,8 +133,8 @@ class HomeFragment : Fragment() {
         if (userIds.isEmpty()) return
 
         for (userId in userIds) {
-            storiesRef.child(userId).addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
+            storiesRef.child(userId).get()
+                .addOnSuccessListener { snapshot ->
                     val userStories = mutableListOf<Story>()
 
                     for (storySnap in snapshot.children) {
@@ -152,15 +147,13 @@ class HomeFragment : Fragment() {
                     userStories.sortBy { it.timestamp }
                     val hasUnviewed = userStories.any { !it.isViewedBy(currentUserId) }
 
-                    db.child("users").child(userId).get()
-                        .addOnSuccessListener { userSnapshot ->
-                            val userProfile = userSnapshot.getValue(UserProfile::class.java)
-
+                    getUserProfile(userId) { userProfile ->
+                        if (userProfile != null) {
                             if (userId == currentUserId) {
                                 val storyGroup = StoryGroup(
                                     userId = userId,
-                                    username = userProfile?.username ?: "You",
-                                    userPhotoBase64 = userProfile?.photoBase64,
+                                    username = userProfile.username ?: "You",
+                                    userPhotoBase64 = userProfile.photoBase64,
                                     stories = userStories,
                                     hasUnviewedStories = false
                                 )
@@ -171,8 +164,8 @@ class HomeFragment : Fragment() {
                             } else if (userStories.isNotEmpty()) {
                                 val storyGroup = StoryGroup(
                                     userId = userId,
-                                    username = userProfile?.username ?: "User",
-                                    userPhotoBase64 = userProfile?.photoBase64,
+                                    username = userProfile.username ?: "User",
+                                    userPhotoBase64 = userProfile.photoBase64,
                                     stories = userStories,
                                     hasUnviewedStories = hasUnviewed
                                 )
@@ -186,22 +179,20 @@ class HomeFragment : Fragment() {
                             if (processedCount == userIds.size) {
                                 updateStoriesUI(tempStoryGroups, currentUserId)
                             }
-                        }
-                        .addOnFailureListener {
+                        } else {
                             processedCount++
                             if (processedCount == userIds.size) {
                                 updateStoriesUI(tempStoryGroups, currentUserId)
                             }
                         }
+                    }
                 }
-
-                override fun onCancelled(error: DatabaseError) {
+                .addOnFailureListener {
                     processedCount++
                     if (processedCount == userIds.size) {
                         updateStoriesUI(tempStoryGroups, currentUserId)
                     }
                 }
-            })
         }
     }
 
@@ -218,18 +209,13 @@ class HomeFragment : Fragment() {
     }
 
     private fun loadPosts() {
-        val currentUserId = auth.currentUser?.uid ?: return
+        val currentUserId = getCurrentUserId() ?: return
 
-        db.child("follows").child(currentUserId).child("following")
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(followingSnapshot: DataSnapshot) {
-                    val followingIds = followingSnapshot.children.mapNotNull { it.key }.toMutableList()
-                    followingIds.add(currentUserId)
-                    loadPostsForUsers(followingIds)
-                }
-
-                override fun onCancelled(error: DatabaseError) {}
-            })
+        getFollowingUsers(currentUserId) { followingIds ->
+            if (followingIds != null) {
+                loadPostsForUsers(followingIds)
+            }
+        }
     }
 
     private fun loadPostsForUsers(userIds: List<String>) {
@@ -242,59 +228,44 @@ class HomeFragment : Fragment() {
         if (userIds.isEmpty()) return
 
         for (userId in userIds) {
-            db.child("userPosts").child(userId).addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    val postIds = snapshot.children.mapNotNull { it.key }
-
+            getUserPosts(userId) { postIds ->
+                if (postIds != null) {
                     var userPostsProcessed = 0
                     if (postIds.isEmpty()) {
                         processedCount++
                         if (processedCount == userIds.size) {
                             updatePostsUI(tempPosts)
                         }
-                        return
+                        return@getUserPosts
                     }
 
                     for (postId in postIds) {
-                        db.child("posts").child(postId).get()
-                            .addOnSuccessListener { postSnapshot ->
-                                val post = postSnapshot.getValue(Post::class.java)
-                                if (post != null) {
-                                    synchronized(tempPosts) {
-                                        // Only add if post doesn't already exist
-                                        if (tempPosts.none { it.postId == post.postId }) {
-                                            tempPosts.add(post)
-                                        }
+                        getPost(postId) { post ->
+                            if (post != null) {
+                                synchronized(tempPosts) {
+                                    // Only add if post doesn't already exist
+                                    if (tempPosts.none { it.postId == post.postId }) {
+                                        tempPosts.add(post)
                                     }
                                 }
+                            }
 
-                                userPostsProcessed++
-                                if (userPostsProcessed == postIds.size) {
-                                    processedCount++
-                                    if (processedCount == userIds.size) {
-                                        updatePostsUI(tempPosts)
-                                    }
+                            userPostsProcessed++
+                            if (userPostsProcessed == postIds.size) {
+                                processedCount++
+                                if (processedCount == userIds.size) {
+                                    updatePostsUI(tempPosts)
                                 }
                             }
-                            .addOnFailureListener {
-                                userPostsProcessed++
-                                if (userPostsProcessed == postIds.size) {
-                                    processedCount++
-                                    if (processedCount == userIds.size) {
-                                        updatePostsUI(tempPosts)
-                                    }
-                                }
-                            }
+                        }
                     }
-                }
-
-                override fun onCancelled(error: DatabaseError) {
+                } else {
                     processedCount++
                     if (processedCount == userIds.size) {
                         updatePostsUI(tempPosts)
                     }
                 }
-            })
+            }
         }
     }
 
@@ -308,9 +279,9 @@ class HomeFragment : Fragment() {
     }
 
     private fun toggleLike(post: Post) {
-        val currentUserId = auth.currentUser?.uid ?: return
+        val currentUserId = getCurrentUserId() ?: return
 
-        val likesRef = db.child("posts").child(post.postId).child("likes")
+        val likesRef = getPostLikesReference(post.postId)
 
         if (post.isLikedBy(currentUserId)) {
             // Unlike
@@ -330,22 +301,19 @@ class HomeFragment : Fragment() {
     }
 
     private fun updateSinglePost(postId: String) {
-        db.child("posts").child(postId).get()
-            .addOnSuccessListener { snapshot ->
-                val updatedPost = snapshot.getValue(Post::class.java)
-                if (updatedPost != null) {
-                    // Find the index of the post in the list
-                    val index = posts.indexOfFirst { it.postId == postId }
-                    if (index != -1) {
-                        // Update only that specific post
-                        posts[index] = updatedPost
-                        postsAdapter.notifyItemChanged(index)
-                    }
+        getPost(postId) { updatedPost ->
+            if (updatedPost != null) {
+                // Find the index of the post in the list
+                val index = posts.indexOfFirst { it.postId == postId }
+                if (index != -1) {
+                    // Update only that specific post
+                    posts[index] = updatedPost
+                    postsAdapter.notifyItemChanged(index)
                 }
-            }
-            .addOnFailureListener {
+            } else {
                 Toast.makeText(requireContext(), "Failed to update post", Toast.LENGTH_SHORT).show()
             }
+        }
     }
 
     private fun openComments(post: Post) {
@@ -363,7 +331,7 @@ class HomeFragment : Fragment() {
     }
 
     private fun openStoryViewer(storyGroup: StoryGroup) {
-        val currentUserId = auth.currentUser?.uid ?: return
+        val currentUserId = getCurrentUserId() ?: return
 
         if (storyGroup.userId == currentUserId) {
             val intent = Intent(requireContext(), socialhomescreen14::class.java).apply {
@@ -392,4 +360,69 @@ class HomeFragment : Fragment() {
         }
         findNavController().navigate(R.id.other_user_profile, bundle)
     }
+
+    // Helper methods for Firebase operations
+    private fun getCurrentUserId(): String? {
+        return userPreferences.getUser()?.uid
+    }
+
+    private fun getFollowingUsers(userId: String, callback: (List<String>?) -> Unit) {
+        db.child("users").child(userId).child("following").get()
+            .addOnSuccessListener { snapshot ->
+                val followingIds = mutableListOf<String>()
+                followingIds.add(userId) // Include current user's posts
+
+                for (followingSnap in snapshot.children) {
+                    val followingId = followingSnap.key
+                    if (followingId != null) {
+                        followingIds.add(followingId)
+                    }
+                }
+                callback(followingIds)
+            }
+            .addOnFailureListener {
+                callback(listOf(userId)) // At least show current user's content
+            }
+    }
+
+    private fun getUserProfile(userId: String, callback: (UserProfile?) -> Unit) {
+        db.child("users").child(userId).get()
+            .addOnSuccessListener { snapshot ->
+                val profile = snapshot.getValue(UserProfile::class.java)
+                callback(profile)
+            }
+            .addOnFailureListener {
+                callback(null)
+            }
+    }
+
+    private fun getUserPosts(userId: String, callback: (List<String>?) -> Unit) {
+        db.child("user_posts").child(userId).get()
+            .addOnSuccessListener { snapshot ->
+                val postIds = mutableListOf<String>()
+                for (postSnap in snapshot.children) {
+                    val postId = postSnap.key
+                    if (postId != null) {
+                        postIds.add(postId)
+                    }
+                }
+                callback(postIds)
+            }
+            .addOnFailureListener {
+                callback(null)
+            }
+    }
+
+    private fun getPost(postId: String, callback: (Post?) -> Unit) {
+        db.child("posts").child(postId).get()
+            .addOnSuccessListener { snapshot ->
+                val post = snapshot.getValue(Post::class.java)
+                callback(post)
+            }
+            .addOnFailureListener {
+                callback(null)
+            }
+    }
+
+    private fun getPostLikesReference(postId: String) = db.child("posts").child(postId).child("likes")
 }
