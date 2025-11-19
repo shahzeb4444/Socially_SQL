@@ -11,5 +11,66 @@ interface ApiService {
 
     @POST("auth/login.php")
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
+
+    // Posts
+    @POST("posts/create.php")
+    suspend fun createPost(@Body request: CreatePostRequest): Response<CreatePostResponse>
+
+    @POST("posts/get_feed.php")
+    suspend fun getFeedPosts(@Body request: GetFeedRequest): Response<GetFeedResponse>
+
+    @POST("posts/toggle_like.php")
+    suspend fun toggleLike(@Body request: ToggleLikeRequest): Response<ToggleLikeResponse>
+
+    // Stories
+    @POST("stories/create.php")
+    suspend fun createStory(@Body request: CreateStoryRequest): Response<CreateStoryResponse>
+
+    @POST("stories/get_feed.php")
+    suspend fun getFeedStories(@Body request: GetFeedRequest): Response<GetFeedStoriesResponse>
+
+    @POST("stories/mark_viewed.php")
+    suspend fun markStoryViewed(@Body request: MarkStoryViewedRequest): Response<BaseResponse>
+
+    // Follow System
+    @POST("follow/send_request.php")
+    suspend fun sendFollowRequest(@Body request: SendFollowRequest): Response<FollowActionResponse>
+
+    @POST("follow/cancel_request.php")
+    suspend fun cancelFollowRequest(@Body request: SendFollowRequest): Response<FollowActionResponse>
+
+    @POST("follow/accept_request.php")
+    suspend fun acceptFollowRequest(@Body request: SendFollowRequest): Response<FollowActionResponse>
+
+    @POST("follow/reject_request.php")
+    suspend fun rejectFollowRequest(@Body request: SendFollowRequest): Response<FollowActionResponse>
+
+    @POST("follow/unfollow.php")
+    suspend fun unfollowUser(@Body request: SendFollowRequest): Response<FollowActionResponse>
+
+    @POST("follow/get_followers.php")
+    suspend fun getFollowers(@Body request: GetFollowersRequest): Response<GetFollowersResponse>
+
+    @POST("follow/get_following.php")
+    suspend fun getFollowing(@Body request: GetFollowersRequest): Response<GetFollowingResponse>
+
+    @POST("follow/get_requests.php")
+    suspend fun getFollowRequests(@Body request: GetFollowRequestsRequest): Response<GetFollowRequestsResponse>
+
+    // User Profile & Search
+    @POST("users/search.php")
+    suspend fun searchUsers(@Body request: SearchUsersRequest): Response<SearchUsersResponse>
+
+    @POST("user/get_profile.php")
+    suspend fun getUserProfile(@Body request: GetUserProfileRequest): Response<GetUserProfileResponse>
+
+    @POST("user/update_profile.php")
+    suspend fun updateUserProfile(@Body request: UpdateProfileRequest): Response<UpdateProfileResponse>
+
+    // Push Notifications
+    @POST("notifications/save_fcm_token.php")
+    suspend fun saveFCMToken(@Body request: SaveFCMTokenRequest): Response<SaveFCMTokenResponse>
 }
+
+
 

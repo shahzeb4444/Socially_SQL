@@ -99,6 +99,20 @@ class HomeActivity : AppCompatActivity() {
         navController: androidx.navigation.NavController,
         bottom: BottomNavigationView
     ) {
+        // Handle notification clicks to open NotificationsYouFragment
+        if (intent.getBooleanExtra("open_notifications", false)) {
+            val notificationType = intent.getStringExtra("notification_type")
+
+            // Navigate to notifications fragment
+            navController.navigate(R.id.nav_notifications)
+            bottom.selectedItemId = R.id.nav_notifications
+
+            // Clear the intent extras
+            intent.removeExtra("open_notifications")
+            intent.removeExtra("notification_type")
+            return
+        }
+
         if (intent.getBooleanExtra("open_user_profile", false)) {
             val userId = intent.getStringExtra("user_id")
             val username = intent.getStringExtra("username")

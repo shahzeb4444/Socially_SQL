@@ -13,10 +13,15 @@ import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.firebase.database.FirebaseDatabase
+import com.teamsx.i230610_i230040.network.Resource
+import com.teamsx.i230610_i230040.network.UserRepository
 import com.teamsx.i230610_i230040.utils.UserPreferences
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class UserSearchActivity : AppCompatActivity() {
 
@@ -29,17 +34,17 @@ class UserSearchActivity : AppCompatActivity() {
     private lateinit var emptyView: TextView
     private lateinit var adapter: UsersAdapter
 
-    private val db by lazy { FirebaseDatabase.getInstance().reference }
+    private val userRepository = UserRepository()
     private val userPreferences by lazy { UserPreferences(this) }
-    private val allUsers = mutableListOf<UserRow>()   // full list loaded once
-    private val filtered = mutableListOf<UserRow>()   // filtered list shown
+    private val filtered = mutableListOf<UserRow>()
+    private var searchJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_user_search)
 
-        searchField = findViewById(R.id.searchfield)    // keep same id name you used
+        searchField = findViewById(R.id.searchfield)
         recycler = findViewById(R.id.rvUsers)
         emptyView = findViewById(R.id.emptyText)
 
@@ -47,75 +52,78 @@ class UserSearchActivity : AppCompatActivity() {
         recycler.layoutManager = LinearLayoutManager(this)
         recycler.adapter = adapter
 
-        // Optional back action
         findViewById<ImageView>(R.id.btnBack)?.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
 
-        // Load all users from Firebase
-        loadAllUsers { users, error ->
-            if (error != null) {
-                emptyView.isVisible = true
-                emptyView.text = "Failed to load users."
-            } else {
-                allUsers.clear()
-                allUsers.addAll(users)
-                // initial filter using incoming query (if any)
-                val initial = intent?.getStringExtra(EXTRA_QUERY).orEmpty()
-                searchField.setText(initial)
-                applyFilter(initial)
-            }
+        // Get initial query if passed
+        val initialQuery = intent?.getStringExtra(EXTRA_QUERY).orEmpty()
+        if (initialQuery.isNotEmpty()) {
+            searchField.setText(initialQuery)
+            performSearch(initialQuery)
+        } else {
+            emptyView.isVisible = true
+            emptyView.text = "Search for people"
         }
 
-        // 2) Filter live as user types
+        // Live search with debounce
         searchField.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {}
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                applyFilter(s?.toString().orEmpty())
+                val query = s?.toString().orEmpty()
+
+                // Cancel previous search job
+                searchJob?.cancel()
+
+                if (query.isBlank()) {
+                    filtered.clear()
+                    adapter.notifyDataSetChanged()
+                    emptyView.isVisible = true
+                    emptyView.text = "Search for people"
+                } else {
+                    // Debounce search by 500ms
+                    searchJob = lifecycleScope.launch {
+                        delay(500)
+                        performSearch(query)
+                    }
+                }
             }
         })
 
-        // Optional: hide keyboard action ‘search’
         searchField.setOnEditorActionListener { _, actionId, _ ->
             actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_ACTION_DONE
         }
     }
 
-    private fun applyFilter(query: String) {
-        filtered.clear()
-        if (query.isBlank()) {
-            // Show nothing until user types (Instagram-like)
-            emptyView.isVisible = true
-            emptyView.text = "Search for people"
-        } else {
-            val q = query.trim().lowercase()
-            filtered.addAll(allUsers.filter { it.username.lowercase().contains(q) })
-            emptyView.isVisible = filtered.isEmpty()
-            emptyView.text = if (filtered.isEmpty()) "No accounts found" else ""
-        }
-        adapter.notifyDataSetChanged()
-    }
+    private fun performSearch(query: String) {
+        lifecycleScope.launch {
+            val currentUid = userPreferences.getUser()?.uid ?: ""
+            when (val result = userRepository.searchUsers(query, currentUid)) {
+                is Resource.Success -> {
+                    filtered.clear()
+                    val users = result.data?.map { apiUser ->
+                        UserRow(
+                            uid = apiUser.uid,
+                            username = apiUser.username,
+                            photoBase64 = apiUser.profileImageUrl
+                        )
+                    } ?: emptyList()
+                    filtered.addAll(users)
 
-    private fun loadAllUsers(callback: (List<UserRow>, String?) -> Unit) {
-        db.child("users").get()
-            .addOnSuccessListener { snapshot ->
-                val users = mutableListOf<UserRow>()
-                for (userSnap in snapshot.children) {
-                    val uid = userSnap.key ?: continue
-                    val profile = userSnap.getValue(UserProfile::class.java) ?: continue
-
-                    if (profile.username.isNotBlank()) {
-                        users.add(UserRow(
-                            uid = uid,
-                            username = profile.username,
-                            photoBase64 = profile.photoBase64
-                        ))
-                    }
+                    emptyView.isVisible = filtered.isEmpty()
+                    emptyView.text = if (filtered.isEmpty()) "No accounts found" else ""
+                    adapter.notifyDataSetChanged()
                 }
-                callback(users, null)
+                is Resource.Error -> {
+                    filtered.clear()
+                    adapter.notifyDataSetChanged()
+                    emptyView.isVisible = true
+                    emptyView.text = result.message ?: "Failed to search users"
+                }
+                is Resource.Loading -> {
+                    // Show loading state if needed
+                }
             }
-            .addOnFailureListener { error ->
-                callback(emptyList(), error.message)
-            }
+        }
     }
 }
 

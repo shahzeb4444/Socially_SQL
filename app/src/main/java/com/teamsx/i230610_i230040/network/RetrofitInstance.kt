@@ -27,12 +27,12 @@ object RetrofitInstance {
     //    - Windows Firewall allows connections on port 80
     //    - Your PHP files are in: C:\xampp\htdocs\socially_api\
     //
-    // Current IP: 172.16.52.211 - Update this if you changed networks!
-    // CHANGE TO: http://10.0.2.2/socially_api/endpoints/ if using EMULATOR
-    private const val BASE_URL = "http://172.17.10.107/socially_api/endpoints/"
+    // Current IP: Use 10.0.2.2 for EMULATOR or 192.168.100.6 for PHYSICAL DEVICE
+    // CURRENT SETTING: For EMULATOR (change to 192.168.100.6 for physical device)
+    private const val BASE_URL = "http://192.168.100.6/socially_api/endpoints/"
 
     // Test URL (publicly accessible for debugging)
-    const val TEST_URL = "http://172.17.10.107/socially_api/test.php"
+    const val TEST_URL = "http://192.168.100.6/socially_api/test.php"
     const val CURRENT_BASE = BASE_URL
 
     // HTTP Logging Interceptor for debugging

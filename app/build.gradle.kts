@@ -62,6 +62,7 @@ dependencies {
     implementation("com.google.firebase:firebase-database-ktx")
     implementation("com.google.firebase:firebase-database:20.2.1")
     implementation("com.google.firebase:firebase-storage:20.2.1")
+    implementation("com.google.firebase:firebase-messaging-ktx")
 
 
     implementation("io.agora.rtc:full-sdk:4.6.0")

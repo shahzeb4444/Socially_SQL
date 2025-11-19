@@ -2,22 +2,27 @@ package com.teamsx.i230610_i230040
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.firebase.database.FirebaseDatabase
+import com.teamsx.i230610_i230040.network.Resource
 import com.teamsx.i230610_i230040.utils.UserPreferences
+import com.teamsx.i230610_i230040.viewmodels.PostViewModel
+import com.teamsx.i230610_i230040.viewmodels.StoryViewModel
 
 class HomeFragment : Fragment() {
 
-    private val db by lazy { FirebaseDatabase.getInstance().reference }
     private val userPreferences by lazy { UserPreferences(requireContext()) }
+    private lateinit var postViewModel: PostViewModel
+    private lateinit var storyViewModel: StoryViewModel
 
     private lateinit var storiesRecyclerView: RecyclerView
     private lateinit var postsRecyclerView: RecyclerView
@@ -34,12 +39,88 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        postViewModel = ViewModelProvider(this)[PostViewModel::class.java]
+        storyViewModel = ViewModelProvider(this)[StoryViewModel::class.java]
+
         setupTopBarListeners(view)
         setupStoriesRecyclerView(view)
         setupPostsRecyclerView(view)
+        observeViewModels()
 
         loadStories()
         loadPosts()
+    }
+
+    private fun observeViewModels() {
+        // Observe stories
+        storyViewModel.feedStoriesState.observe(viewLifecycleOwner) { resource ->
+            when (resource) {
+                is Resource.Success<*> -> {
+                    @Suppress("UNCHECKED_CAST")
+                    val fetchedStoryGroups = resource.data as? List<StoryGroup> ?: emptyList()
+                    Log.d("HomeFragment", "Stories loaded successfully: ${fetchedStoryGroups.size} groups")
+                    storyGroups.clear()
+                    storyGroups.addAll(fetchedStoryGroups)
+                    storiesAdapter.notifyDataSetChanged()
+                    Log.d("HomeFragment", "Stories adapter updated")
+                }
+                is Resource.Error<*> -> {
+                    Log.e("HomeFragment", "Failed to load stories: ${resource.message}")
+                    Toast.makeText(requireContext(), "Failed to load stories: ${resource.message}", Toast.LENGTH_SHORT).show()
+                }
+                is Resource.Loading<*> -> {
+                    Log.d("HomeFragment", "Loading stories...")
+                }
+                null -> {}
+            }
+        }
+
+        // Observe posts
+        postViewModel.feedPostsState.observe(viewLifecycleOwner) { resource ->
+            when (resource) {
+                is Resource.Success<*> -> {
+                    @Suppress("UNCHECKED_CAST")
+                    val fetchedPosts = resource.data as? List<Post> ?: emptyList()
+                    Log.d("HomeFragment", "Posts loaded successfully: ${fetchedPosts.size} posts")
+                    posts.clear()
+                    posts.addAll(fetchedPosts)
+                    postsAdapter.notifyDataSetChanged()
+                    Log.d("HomeFragment", "Posts adapter updated, total posts: ${posts.size}")
+                }
+                is Resource.Error<*> -> {
+                    Log.e("HomeFragment", "Failed to load posts: ${resource.message}")
+                    Toast.makeText(requireContext(), "Failed to load posts: ${resource.message}", Toast.LENGTH_SHORT).show()
+                }
+                is Resource.Loading<*> -> {
+                    Log.d("HomeFragment", "Loading posts...")
+                }
+                null -> {}
+            }
+        }
+
+        // Observe toggle like
+        postViewModel.toggleLikeState.observe(viewLifecycleOwner) { resource ->
+            when (resource) {
+                is Resource.Success<*> -> {
+                    @Suppress("UNCHECKED_CAST")
+                    val updatedPost = resource.data as? Post
+                    if (updatedPost != null) {
+                        val index = posts.indexOfFirst { it.postId == updatedPost.postId }
+                        if (index != -1) {
+                            posts[index] = updatedPost
+                            postsAdapter.notifyItemChanged(index)
+                        }
+                    }
+                    postViewModel.clearToggleLikeState()
+                }
+                is Resource.Error<*> -> {
+                    Toast.makeText(requireContext(), "Failed to update like: ${resource.message}", Toast.LENGTH_SHORT).show()
+                    postViewModel.clearToggleLikeState()
+                }
+                is Resource.Loading<*> -> {}
+                null -> {}
+            }
+        }
     }
 
     override fun onResume() {
@@ -114,206 +195,20 @@ class HomeFragment : Fragment() {
 
     private fun loadStories() {
         val currentUserId = getCurrentUserId() ?: return
-
-        getFollowingUsers(currentUserId) { followingIds ->
-            if (followingIds != null) {
-                loadStoriesForUsers(followingIds, currentUserId)
-            }
-        }
-    }
-
-    private fun loadStoriesForUsers(userIds: List<String>, currentUserId: String) {
-        storyGroups.clear()
-        storiesAdapter.notifyDataSetChanged()
-
-        val tempStoryGroups = mutableListOf<StoryGroup>()
-        val storiesRef = db.child("stories")
-        var processedCount = 0
-
-        if (userIds.isEmpty()) return
-
-        for (userId in userIds) {
-            storiesRef.child(userId).get()
-                .addOnSuccessListener { snapshot ->
-                    val userStories = mutableListOf<Story>()
-
-                    for (storySnap in snapshot.children) {
-                        val story = storySnap.getValue(Story::class.java)
-                        if (story != null && story.isValid()) {
-                            userStories.add(story)
-                        }
-                    }
-
-                    userStories.sortBy { it.timestamp }
-                    val hasUnviewed = userStories.any { !it.isViewedBy(currentUserId) }
-
-                    getUserProfile(userId) { userProfile ->
-                        if (userProfile != null) {
-                            if (userId == currentUserId) {
-                                val storyGroup = StoryGroup(
-                                    userId = userId,
-                                    username = userProfile.username ?: "You",
-                                    userPhotoBase64 = userProfile.photoBase64,
-                                    stories = userStories,
-                                    hasUnviewedStories = false
-                                )
-                                synchronized(tempStoryGroups) {
-                                    tempStoryGroups.removeAll { it.userId == userId }
-                                    tempStoryGroups.add(storyGroup)
-                                }
-                            } else if (userStories.isNotEmpty()) {
-                                val storyGroup = StoryGroup(
-                                    userId = userId,
-                                    username = userProfile.username ?: "User",
-                                    userPhotoBase64 = userProfile.photoBase64,
-                                    stories = userStories,
-                                    hasUnviewedStories = hasUnviewed
-                                )
-                                synchronized(tempStoryGroups) {
-                                    tempStoryGroups.removeAll { it.userId == userId }
-                                    tempStoryGroups.add(storyGroup)
-                                }
-                            }
-
-                            processedCount++
-                            if (processedCount == userIds.size) {
-                                updateStoriesUI(tempStoryGroups, currentUserId)
-                            }
-                        } else {
-                            processedCount++
-                            if (processedCount == userIds.size) {
-                                updateStoriesUI(tempStoryGroups, currentUserId)
-                            }
-                        }
-                    }
-                }
-                .addOnFailureListener {
-                    processedCount++
-                    if (processedCount == userIds.size) {
-                        updateStoriesUI(tempStoryGroups, currentUserId)
-                    }
-                }
-        }
-    }
-
-    private fun updateStoriesUI(tempStoryGroups: List<StoryGroup>, currentUserId: String) {
-        val sorted = tempStoryGroups.sortedWith(compareBy(
-            { it.userId != currentUserId },
-            { !it.hasUnviewedStories },
-            { it.username }
-        ))
-
-        storyGroups.clear()
-        storyGroups.addAll(sorted)
-        storiesAdapter.notifyDataSetChanged()
+        Log.d("HomeFragment", "Loading stories for user: $currentUserId")
+        storyViewModel.getFeedStories(currentUserId)
     }
 
     private fun loadPosts() {
         val currentUserId = getCurrentUserId() ?: return
-
-        getFollowingUsers(currentUserId) { followingIds ->
-            if (followingIds != null) {
-                loadPostsForUsers(followingIds)
-            }
-        }
+        Log.d("HomeFragment", "Loading posts for user: $currentUserId")
+        postViewModel.getFeedPosts(currentUserId)
     }
 
-    private fun loadPostsForUsers(userIds: List<String>) {
-        posts.clear()
-        postsAdapter.notifyDataSetChanged()
-
-        val tempPosts = mutableListOf<Post>()
-        var processedCount = 0
-
-        if (userIds.isEmpty()) return
-
-        for (userId in userIds) {
-            getUserPosts(userId) { postIds ->
-                if (postIds != null) {
-                    var userPostsProcessed = 0
-                    if (postIds.isEmpty()) {
-                        processedCount++
-                        if (processedCount == userIds.size) {
-                            updatePostsUI(tempPosts)
-                        }
-                        return@getUserPosts
-                    }
-
-                    for (postId in postIds) {
-                        getPost(postId) { post ->
-                            if (post != null) {
-                                synchronized(tempPosts) {
-                                    // Only add if post doesn't already exist
-                                    if (tempPosts.none { it.postId == post.postId }) {
-                                        tempPosts.add(post)
-                                    }
-                                }
-                            }
-
-                            userPostsProcessed++
-                            if (userPostsProcessed == postIds.size) {
-                                processedCount++
-                                if (processedCount == userIds.size) {
-                                    updatePostsUI(tempPosts)
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    processedCount++
-                    if (processedCount == userIds.size) {
-                        updatePostsUI(tempPosts)
-                    }
-                }
-            }
-        }
-    }
-
-    private fun updatePostsUI(tempPosts: List<Post>) {
-        // Remove duplicates by postId and sort by timestamp
-        val uniquePosts = tempPosts.distinctBy { it.postId }
-        val sorted = uniquePosts.sortedByDescending { it.timestamp }
-        posts.clear()
-        posts.addAll(sorted)
-        postsAdapter.notifyDataSetChanged()
-    }
 
     private fun toggleLike(post: Post) {
         val currentUserId = getCurrentUserId() ?: return
-
-        val likesRef = getPostLikesReference(post.postId)
-
-        if (post.isLikedBy(currentUserId)) {
-            // Unlike
-            likesRef.child(currentUserId).removeValue()
-                .addOnSuccessListener {
-                    // Update only the specific post in the list
-                    updateSinglePost(post.postId)
-                }
-        } else {
-            // Like
-            likesRef.child(currentUserId).setValue(true)
-                .addOnSuccessListener {
-                    // Update only the specific post in the list
-                    updateSinglePost(post.postId)
-                }
-        }
-    }
-
-    private fun updateSinglePost(postId: String) {
-        getPost(postId) { updatedPost ->
-            if (updatedPost != null) {
-                // Find the index of the post in the list
-                val index = posts.indexOfFirst { it.postId == postId }
-                if (index != -1) {
-                    // Update only that specific post
-                    posts[index] = updatedPost
-                    postsAdapter.notifyItemChanged(index)
-                }
-            } else {
-                Toast.makeText(requireContext(), "Failed to update post", Toast.LENGTH_SHORT).show()
-            }
-        }
+        postViewModel.toggleLike(post.postId, currentUserId)
     }
 
     private fun openComments(post: Post) {
@@ -361,68 +256,8 @@ class HomeFragment : Fragment() {
         findNavController().navigate(R.id.other_user_profile, bundle)
     }
 
-    // Helper methods for Firebase operations
+    // Helper methods
     private fun getCurrentUserId(): String? {
         return userPreferences.getUser()?.uid
     }
-
-    private fun getFollowingUsers(userId: String, callback: (List<String>?) -> Unit) {
-        db.child("users").child(userId).child("following").get()
-            .addOnSuccessListener { snapshot ->
-                val followingIds = mutableListOf<String>()
-                followingIds.add(userId) // Include current user's posts
-
-                for (followingSnap in snapshot.children) {
-                    val followingId = followingSnap.key
-                    if (followingId != null) {
-                        followingIds.add(followingId)
-                    }
-                }
-                callback(followingIds)
-            }
-            .addOnFailureListener {
-                callback(listOf(userId)) // At least show current user's content
-            }
-    }
-
-    private fun getUserProfile(userId: String, callback: (UserProfile?) -> Unit) {
-        db.child("users").child(userId).get()
-            .addOnSuccessListener { snapshot ->
-                val profile = snapshot.getValue(UserProfile::class.java)
-                callback(profile)
-            }
-            .addOnFailureListener {
-                callback(null)
-            }
-    }
-
-    private fun getUserPosts(userId: String, callback: (List<String>?) -> Unit) {
-        db.child("user_posts").child(userId).get()
-            .addOnSuccessListener { snapshot ->
-                val postIds = mutableListOf<String>()
-                for (postSnap in snapshot.children) {
-                    val postId = postSnap.key
-                    if (postId != null) {
-                        postIds.add(postId)
-                    }
-                }
-                callback(postIds)
-            }
-            .addOnFailureListener {
-                callback(null)
-            }
-    }
-
-    private fun getPost(postId: String, callback: (Post?) -> Unit) {
-        db.child("posts").child(postId).get()
-            .addOnSuccessListener { snapshot ->
-                val post = snapshot.getValue(Post::class.java)
-                callback(post)
-            }
-            .addOnFailureListener {
-                callback(null)
-            }
-    }
-
-    private fun getPostLikesReference(postId: String) = db.child("posts").child(postId).child("likes")
 }

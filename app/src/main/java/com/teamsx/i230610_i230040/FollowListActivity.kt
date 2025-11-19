@@ -11,13 +11,15 @@ import android.widget.AutoCompleteTextView
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.imageview.ShapeableImageView
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.*
+import com.teamsx.i230610_i230040.network.Resource
+import com.teamsx.i230610_i230040.utils.UserPreferences
+import com.teamsx.i230610_i230040.viewmodels.FollowViewModel
 
 class FollowListActivity : AppCompatActivity() {
 
@@ -27,8 +29,8 @@ class FollowListActivity : AppCompatActivity() {
         const val MODE_FOLLOWING = "following"
     }
 
-    private val auth by lazy { FirebaseAuth.getInstance() }
-    private val db by lazy { FirebaseDatabase.getInstance().reference }
+    private val followViewModel: FollowViewModel by viewModels()
+    private val userPreferences by lazy { UserPreferences(this) }
 
     private lateinit var title: TextView
     private lateinit var searchField: AutoCompleteTextView
@@ -71,49 +73,66 @@ class FollowListActivity : AppCompatActivity() {
             actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_ACTION_DONE
         }
 
+        setupObservers()
         loadList()
     }
 
-    private fun loadList() {
-        val me = auth.currentUser?.uid ?: return
-        // 1) read the ids under follows/<me>/<mode>
-        db.child("follows").child(me).child(mode)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(s: DataSnapshot) {
-                    val ids = s.children.mapNotNull { it.key }
-                    if (ids.isEmpty()) {
+    private fun setupObservers() {
+        // Observe followers
+        followViewModel.followers.observe(this) { resource ->
+            when (resource) {
+                is Resource.Success -> {
+                    if (mode == MODE_FOLLOWERS) {
                         all.clear()
-                        filtered.clear()
-                        emptyView.isVisible = true
-                        emptyView.text = "No ${if (mode == MODE_FOLLOWERS) "followers" else "following"} yet"
-                        adapter.notifyDataSetChanged()
-                        return
+                        resource.data?.forEach { apiUser ->
+                            all.add(RowUser(apiUser.uid, apiUser.username, apiUser.profileImageUrl))
+                        }
+                        applyFilter(searchField.text?.toString().orEmpty())
                     }
-
-                    // 2) fetch user profiles (one shot)
-                    db.child("users").addListenerForSingleValueEvent(object : ValueEventListener {
-                        override fun onDataChange(allUsersSnap: DataSnapshot) {
-                            all.clear()
-                            for (uid in ids) {
-                                val u = allUsersSnap.child(uid).getValue(UserProfile::class.java)
-                                if (u != null) {
-                                    all.add(RowUser(uid, u.username, u.photoBase64))
-                                }
-                            }
-                            // default: show all
-                            applyFilter(searchField.text?.toString().orEmpty())
-                        }
-                        override fun onCancelled(error: DatabaseError) {
-                            emptyView.isVisible = true
-                            emptyView.text = "Failed to load users."
-                        }
-                    })
                 }
-                override fun onCancelled(error: DatabaseError) {
+                is Resource.Error -> {
                     emptyView.isVisible = true
-                    emptyView.text = "Failed to load list."
+                    emptyView.text = resource.message ?: "Failed to load followers"
                 }
-            })
+                is Resource.Loading -> {
+                    // Show loading if needed
+                }
+                else -> {}
+            }
+        }
+
+        // Observe following
+        followViewModel.following.observe(this) { resource ->
+            when (resource) {
+                is Resource.Success -> {
+                    if (mode == MODE_FOLLOWING) {
+                        all.clear()
+                        resource.data?.forEach { apiUser ->
+                            all.add(RowUser(apiUser.uid, apiUser.username, apiUser.profileImageUrl))
+                        }
+                        applyFilter(searchField.text?.toString().orEmpty())
+                    }
+                }
+                is Resource.Error -> {
+                    emptyView.isVisible = true
+                    emptyView.text = resource.message ?: "Failed to load following"
+                }
+                is Resource.Loading -> {
+                    // Show loading if needed
+                }
+                else -> {}
+            }
+        }
+    }
+
+    private fun loadList() {
+        val uid = userPreferences.getUser()?.uid ?: return
+
+        if (mode == MODE_FOLLOWERS) {
+            followViewModel.getFollowers(uid)
+        } else {
+            followViewModel.getFollowing(uid)
+        }
     }
 
     private fun applyFilter(query: String) {
@@ -125,7 +144,13 @@ class FollowListActivity : AppCompatActivity() {
             filtered.addAll(all.filter { it.username.lowercase().contains(q) })
         }
         emptyView.isVisible = filtered.isEmpty()
-        if (filtered.isEmpty()) emptyView.text = "No results"
+        if (filtered.isEmpty()) {
+            emptyView.text = if (all.isEmpty()) {
+                "No ${if (mode == MODE_FOLLOWERS) "followers" else "following"} yet"
+            } else {
+                "No results"
+            }
+        }
         adapter.notifyDataSetChanged()
     }
 }

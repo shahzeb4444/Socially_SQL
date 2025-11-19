@@ -19,6 +19,7 @@ class UserPreferences(context: Context) {
         private const val KEY_COVER_IMAGE = "cover_image_url"
         private const val KEY_CREATED_AT = "created_at"
         private const val KEY_IS_LOGGED_IN = "is_logged_in"
+        private const val KEY_FCM_TOKEN = "fcm_token"
     }
 
     fun saveUser(user: User) {
@@ -78,6 +79,14 @@ class UserPreferences(context: Context) {
 
     fun getEmail(): String? {
         return prefs.getString(KEY_EMAIL, null)
+    }
+
+    fun saveFCMToken(token: String) {
+        prefs.edit().putString(KEY_FCM_TOKEN, token).apply()
+    }
+
+    fun getFCMToken(): String? {
+        return prefs.getString(KEY_FCM_TOKEN, null)
     }
 }
 
