@@ -57,6 +57,7 @@
               <option value="3e7de6e7-2c3b-419b-b96c-b7ecd7f54624" />
               <option value="3f612382-dbd8-401c-8f60-131055b6d276" />
               <option value="40377cbc-33cc-45df-85f7-677a223a71e1" />
+              <option value="414c12cf-682c-4d3f-92ca-637006135e78" />
               <option value="420a204f-c840-4e46-904d-f803af71d531" />
               <option value="44ff44a0-20ce-4c14-bb72-55aa5ab86d1f" />
               <option value="467a35f5-aa66-48bc-80df-5f8e9801977e" />
@@ -82,6 +83,7 @@
               <option value="81ea5230-d669-4eec-b5c2-e3bb87bf40af" />
               <option value="82e9e5f3-eeca-401b-93f4-c28de971a770" />
               <option value="8431e54a-4010-403a-8018-f7ba67333b69" />
+              <option value="857cb8f8-f4b3-4291-99e0-fe8c2a712eb3" />
               <option value="87bb1dde-747e-4a10-a4ac-a832a57a719f" />
               <option value="8c1957c3-0ba4-4b2e-bcea-cd80169b48a2" />
               <option value="93173a60-1410-46f9-8448-1f7aca6fa15f" />
@@ -137,19 +139,9 @@
       <entry key="ae9ab481-32ec-4a94-a17f-12bd24b83900" />
       <entry key="c1bd36a0-0ed8-4e22-861e-6caa06b5e549">
         <set>
-          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/endpoints/follow/send_request.php" />
-          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/endpoints/follow/accept_request.php" />
-          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/utils/fcm_helper.php" />
-          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/test_fcm.html" />
-          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/test_fcm_check.php" />
-          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/test_service_account.php" />
-          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/test_fcm_send.php" />
-          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/test_error_log.php" />
-          <option value="file://$PROJECT_DIR$/app/src/main/AndroidManifest.xml" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/utils/NotificationPermissionHelper.kt" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/login_splash.kt" />
           <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/ProfileFragment.kt" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/MainActivity.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/HomeActivity.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/viewmodels/UserProfileViewModel.kt" />
         </set>
       </entry>
     </pendingWorkingSetItems>

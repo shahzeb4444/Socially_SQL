@@ -18,21 +18,21 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.imageview.ShapeableImageView
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
 import com.teamsx.i230610_i230040.utils.UserPreferences
+import com.teamsx.i230610_i230040.viewmodels.UserProfileViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class ProfileFragment : Fragment() {
 
-    private val auth by lazy { FirebaseAuth.getInstance() }
-    private val db by lazy { FirebaseDatabase.getInstance().reference }
     private val userPreferences by lazy { UserPreferences(requireContext()) }
+    private lateinit var viewModel: UserProfileViewModel
 
     private lateinit var profileImageView: ShapeableImageView
     private lateinit var usernameTextView: TextView
@@ -55,9 +55,12 @@ class ProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        viewModel = ViewModelProvider(this)[UserProfileViewModel::class.java]
+
         initViews(view)
         setupClickListeners(view)
         setupPostsGrid(view)
+        setupObservers()
         loadUserProfile()
         loadUserPosts()
     }
@@ -124,8 +127,20 @@ class ProfileFragment : Fragment() {
         postsGridRecyclerView.adapter = profileGridAdapter
     }
 
+    private fun setupObservers() {
+        viewModel.profile.observe(viewLifecycleOwner) { profile ->
+            profile?.let { displayProfile(it) }
+        }
+
+        viewModel.error.observe(viewLifecycleOwner) { error ->
+            error?.let {
+                Toast.makeText(requireContext(), it, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     private fun loadUserProfile() {
-        // Get UID from UserPreferences instead of Firebase Auth
+        // Get UID from UserPreferences
         val currentUser = userPreferences.getUser()
         val uid = currentUser?.uid
 
@@ -140,122 +155,44 @@ class ProfileFragment : Fragment() {
 
         Log.d("ProfileFragment", "Loading profile for UID: $uid")
 
-        db.child("users").child(uid).addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val profile = snapshot.getValue(UserProfile::class.java)
-                if (profile != null) {
-                    displayProfile(profile)
-                } else {
-                    Toast.makeText(requireContext(), "Profile not found", Toast.LENGTH_SHORT).show()
-                }
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                Toast.makeText(
-                    requireContext(),
-                    "Failed to load profile: ${error.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        })
+        // Call ViewModel to load profile from PHP API
+        viewModel.loadUserProfile(uid, uid)
     }
 
-    private fun loadUserPosts() {
-        // Get UID from UserPreferences instead of Firebase Auth
-        val uid = userPreferences.getUser()?.uid ?: return
-
-        db.child("userPosts").child(uid).addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                userPosts.clear()
-
-                val postIds = snapshot.children.mapNotNull { it.key }
-
-                if (postIds.isEmpty()) {
-                    profileGridAdapter.notifyDataSetChanged()
-                    return
-                }
-
-                val tempPosts = mutableListOf<Post>()
-                var processedCount = 0
-
-                for (postId in postIds) {
-                    db.child("posts").child(postId).get()
-                        .addOnSuccessListener { postSnapshot ->
-                            val post = postSnapshot.getValue(Post::class.java)
-                            if (post != null) {
-                                synchronized(tempPosts) {
-                                    tempPosts.add(post)
-                                }
-                            }
-
-                            processedCount++
-                            if (processedCount == postIds.size) {
-                                // Sort by timestamp (newest first)
-                                tempPosts.sortByDescending { it.timestamp }
-                                userPosts.clear()
-                                userPosts.addAll(tempPosts)
-                                profileGridAdapter.notifyDataSetChanged()
-                            }
-                        }
-                        .addOnFailureListener {
-                            processedCount++
-                            if (processedCount == postIds.size) {
-                                tempPosts.sortByDescending { it.timestamp }
-                                userPosts.clear()
-                                userPosts.addAll(tempPosts)
-                                profileGridAdapter.notifyDataSetChanged()
-                            }
-                        }
-                }
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                Toast.makeText(
-                    requireContext(),
-                    "Failed to load posts",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        })
-    }
-
-    private fun displayProfile(profile: UserProfile) {
+    private fun displayProfile(profile: com.teamsx.i230610_i230040.network.ApiUserProfile) {
         usernameTextView.text = profile.username
-
-        val fullName = "${profile.firstName} ${profile.lastName}".trim()
-        fullNameTextView.text = if (fullName.isNotEmpty()) fullName else "User"
-
-        bioTextView.text = if (profile.bio.isNotEmpty()) profile.bio else "No bio yet"
+        fullNameTextView.text = profile.fullName ?: profile.username
+        bioTextView.text = profile.bio ?: ""
 
         postsCountTextView.text = profile.postsCount.toString()
-        followersCountTextView.text = formatCount(profile.followersCount)
+        followersCountTextView.text = profile.followersCount.toString()
         followingCountTextView.text = profile.followingCount.toString()
 
-        loadProfilePhoto(profile.photoBase64)
-    }
-
-    private fun loadProfilePhoto(photoBase64: String?) {
-        if (!photoBase64.isNullOrEmpty()) {
+        // Load profile image from Base64
+        if (!profile.profileImageUrl.isNullOrEmpty()) {
             try {
-                val bytes = Base64.decode(photoBase64, Base64.DEFAULT)
-                val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                if (bitmap != null) {
-                    val circularBitmap = getCircularBitmap(bitmap)
-                    profileImageView.setImageBitmap(circularBitmap)
+                val base64String = if (profile.profileImageUrl.startsWith("data:")) {
+                    profile.profileImageUrl.substringAfter("base64,")
                 } else {
-                    setDefaultProfileImage()
+                    profile.profileImageUrl
                 }
+                val decodedBytes = Base64.decode(base64String, Base64.DEFAULT)
+                val bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+                profileImageView.setImageBitmap(getCircularBitmap(bitmap))
             } catch (e: Exception) {
                 e.printStackTrace()
-                setDefaultProfileImage()
+                profileImageView.setImageResource(R.drawable.whitecircle)
             }
         } else {
-            setDefaultProfileImage()
+            profileImageView.setImageResource(R.drawable.whitecircle)
         }
     }
 
-    private fun setDefaultProfileImage() {
-        profileImageView.setImageResource(R.drawable.profile_login_splash)
+    private fun loadUserPosts() {
+        // TODO: Implement API call to get user posts from PHP backend
+        // For now, keeping posts empty until we create the endpoint
+        userPosts.clear()
+        profileGridAdapter.notifyDataSetChanged()
     }
 
     private fun getCircularBitmap(bitmap: Bitmap): Bitmap {
@@ -275,13 +212,6 @@ class ProfileFragment : Fragment() {
         return output
     }
 
-    private fun formatCount(count: Int): String {
-        return when {
-            count >= 1000000 -> String.format("%.1fM", count / 1000000.0)
-            count >= 1000 -> String.format("%.1fK", count / 1000.0)
-            else -> count.toString()
-        }
-    }
 
     private fun openPostView(post: Post) {
         val intent = Intent(requireContext(), PostViewActivity::class.java).apply {
