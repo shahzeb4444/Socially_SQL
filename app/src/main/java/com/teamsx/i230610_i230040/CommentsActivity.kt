@@ -3,6 +3,7 @@ package com.teamsx.i230610_i230040
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.util.Base64
+import android.util.Log
 import android.view.View
 import android.widget.EditText
 import android.widget.ImageView
@@ -11,16 +12,18 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.imageview.ShapeableImageView
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.*
+import com.teamsx.i230610_i230040.utils.UserPreferences
+import com.teamsx.i230610_i230040.network.RetrofitInstance
+import com.teamsx.i230610_i230040.network.*
+import kotlinx.coroutines.launch
 
 class CommentsActivity : AppCompatActivity() {
 
-    private val auth by lazy { FirebaseAuth.getInstance() }
-    private val db by lazy { FirebaseDatabase.getInstance().reference }
+    private val userPreferences by lazy { UserPreferences(this) }
 
     private lateinit var btnBack: ImageView
     private lateinit var commentsRecyclerView: RecyclerView
@@ -85,39 +88,59 @@ class CommentsActivity : AppCompatActivity() {
     }
 
     private fun loadUserProfileImage() {
-        val uid = auth.currentUser?.uid ?: return
+        val currentUser = userPreferences.getUser() ?: return
+        val photoBase64 = currentUser.profileImageUrl
 
-        db.child("users").child(uid).child("photoBase64").get()
-            .addOnSuccessListener { snapshot ->
-                val photoBase64 = snapshot.getValue(String::class.java)
-                if (!photoBase64.isNullOrEmpty()) {
-                    try {
-                        val bytes = Base64.decode(photoBase64, Base64.DEFAULT)
-                        val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                        userProfileImage.setImageBitmap(bitmap)
-                    } catch (e: Exception) {
-                        userProfileImage.setImageResource(R.drawable.profile_login_splash_small)
-                    }
+        if (photoBase64 != null && photoBase64.isNotEmpty()) {
+            try {
+                val cleanBase64 = if (photoBase64.startsWith("data:")) {
+                    photoBase64.substringAfter("base64,")
+                } else {
+                    photoBase64
                 }
+                val bytes = Base64.decode(cleanBase64, Base64.DEFAULT)
+                val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                userProfileImage.setImageBitmap(bitmap)
+            } catch (e: Exception) {
+                Log.e("CommentsActivity", "Error loading profile image", e)
+                userProfileImage.setImageResource(R.drawable.profile_login_splash_small)
             }
+        } else {
+            userProfileImage.setImageResource(R.drawable.profile_login_splash_small)
+        }
     }
 
     private fun loadComments() {
-        db.child("comments").child(postId)
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
+        lifecycleScope.launch {
+            try {
+                val request = GetCommentsRequest(postId)
+                Log.d("CommentsActivity", "Loading comments for post: $postId")
+
+                val response = RetrofitInstance.apiService.getComments(request)
+
+                Log.d("CommentsActivity", "Response code: ${response.code()}")
+                Log.d("CommentsActivity", "Response successful: ${response.isSuccessful}")
+                Log.d("CommentsActivity", "Response body: ${response.body()}")
+
+                if (response.isSuccessful && response.body()?.success == true) {
+                    val apiComments = response.body()?.data?.comments ?: emptyList()
+
+                    Log.d("CommentsActivity", "Loaded ${apiComments.size} comments")
+
                     comments.clear()
+                    comments.addAll(apiComments.map { apiComment ->
+                        Comment(
+                            commentId = apiComment.commentId,
+                            postId = apiComment.postId,
+                            userId = apiComment.userId,
+                            username = apiComment.username,
+                            userPhotoBase64 = apiComment.userPhotoBase64,
+                            message = apiComment.message,
+                            timestamp = apiComment.timestamp
+                        )
+                    })
 
-                    for (commentSnap in snapshot.children) {
-                        val comment = commentSnap.getValue(Comment::class.java)
-                        if (comment != null) {
-                            comments.add(comment)
-                        }
-                    }
-
-                    // Sort by timestamp (oldest first)
-                    comments.sortBy { it.timestamp }
-
+                    // Always update UI - don't show error for empty comments
                     if (comments.isEmpty()) {
                         noCommentsText.visibility = View.VISIBLE
                         commentsRecyclerView.visibility = View.GONE
@@ -128,20 +151,39 @@ class CommentsActivity : AppCompatActivity() {
 
                     commentsAdapter.notifyDataSetChanged()
 
-                    // Scroll to bottom to show latest comment
                     if (comments.isNotEmpty()) {
                         commentsRecyclerView.scrollToPosition(comments.size - 1)
                     }
-                }
+                } else {
+                    val errorMsg = response.body()?.error ?: "Unknown error"
+                    Log.e("CommentsActivity", "Failed to load comments: $errorMsg")
+                    Log.e("CommentsActivity", "Response code: ${response.code()}")
 
-                override fun onCancelled(error: DatabaseError) {
-                    Toast.makeText(
-                        this@CommentsActivity,
-                        "Failed to load comments",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    // Don't show toast if there are just no comments yet
+                    if (response.isSuccessful && response.body()?.success == false) {
+                        Toast.makeText(
+                            this@CommentsActivity,
+                            "Error: $errorMsg",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else if (!response.isSuccessful) {
+                        Toast.makeText(
+                            this@CommentsActivity,
+                            "Failed to load comments (HTTP ${response.code()})",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
                 }
-            })
+            } catch (e: Exception) {
+                Log.e("CommentsActivity", "Error loading comments", e)
+                e.printStackTrace()
+                Toast.makeText(
+                    this@CommentsActivity,
+                    "Error: ${e.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
     }
 
     private fun postComment() {
@@ -151,66 +193,40 @@ class CommentsActivity : AppCompatActivity() {
             return
         }
 
-        val currentUser = auth.currentUser
+        val currentUser = userPreferences.getUser()
         if (currentUser == null) {
             Toast.makeText(this, "Please log in first", Toast.LENGTH_SHORT).show()
             return
         }
 
-        val uid = currentUser.uid
-
-        // Get user info
-        db.child("users").child(uid).get()
-            .addOnSuccessListener { snapshot ->
-                val userProfile = snapshot.getValue(UserProfile::class.java)
-
-                if (userProfile == null) {
-                    Toast.makeText(this, "User profile not found", Toast.LENGTH_SHORT).show()
-                    return@addOnSuccessListener
-                }
-
-                val commentId = PostUtils.generateCommentId()
-
-                val comment = Comment(
-                    commentId = commentId,
+        lifecycleScope.launch {
+            try {
+                val request = AddCommentRequest(
                     postId = postId,
-                    userId = uid,
-                    username = userProfile.username,
-                    userPhotoBase64 = userProfile.photoBase64,
-                    message = message,
-                    timestamp = System.currentTimeMillis()
+                    userId = currentUser.uid,
+                    message = message
                 )
 
-                // Save comment
-                db.child("comments").child(postId).child(commentId).setValue(comment)
-                    .addOnSuccessListener {
-                        // Update comments count on post
-                        db.child("posts").child(postId).child("commentsCount")
-                            .get()
-                            .addOnSuccessListener { countSnapshot ->
-                                val currentCount = countSnapshot.getValue(Int::class.java) ?: 0
-                                db.child("posts").child(postId).child("commentsCount")
-                                    .setValue(currentCount + 1)
-                            }
+                val response = RetrofitInstance.apiService.addComment(request)
 
-                        // Clear input
-                        etComment.text.clear()
-                        Toast.makeText(this, "Comment added", Toast.LENGTH_SHORT).show()
-                    }
-                    .addOnFailureListener { e ->
-                        Toast.makeText(
-                            this,
-                            "Failed to post comment: ${e.message}",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-            }
-            .addOnFailureListener { e ->
+                if (response.isSuccessful && response.body()?.success == true) {
+                    etComment.text.clear()
+                    Toast.makeText(this@CommentsActivity, "Comment added", Toast.LENGTH_SHORT).show()
+
+                    // Reload comments to show the new one
+                    loadComments()
+                } else {
+                    val errorMsg = response.body()?.error ?: "Failed to post comment"
+                    Toast.makeText(this@CommentsActivity, errorMsg, Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Log.e("CommentsActivity", "Error posting comment", e)
                 Toast.makeText(
-                    this,
-                    "Failed to load user profile: ${e.message}",
+                    this@CommentsActivity,
+                    "Error: ${e.message}",
                     Toast.LENGTH_SHORT
                 ).show()
             }
+        }
     }
 }

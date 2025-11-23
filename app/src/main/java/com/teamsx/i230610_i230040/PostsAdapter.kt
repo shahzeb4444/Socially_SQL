@@ -145,7 +145,7 @@ class PostsAdapter(
         }
 
         private fun updateLikesCount(post: Post) {
-            val count = post.getLikesCount()
+            val count = post.getTotalLikes()
             likesCount.text = when {
                 count == 0 -> "Be the first to like this"
                 count == 1 -> "1 like"

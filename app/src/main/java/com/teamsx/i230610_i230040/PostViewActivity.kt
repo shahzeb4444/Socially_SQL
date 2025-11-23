@@ -11,15 +11,21 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.imageview.ShapeableImageView
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.*
+import com.teamsx.i230610_i230040.network.GetPostRequest
+import com.teamsx.i230610_i230040.network.RetrofitInstance
+import com.teamsx.i230610_i230040.network.ToggleLikeRequest
+import com.teamsx.i230610_i230040.utils.UserPreferences
+import com.teamsx.i230610_i230040.viewmodels.PostViewModel
+import kotlinx.coroutines.launch
 
 class PostViewActivity : AppCompatActivity() {
 
-    private val auth by lazy { FirebaseAuth.getInstance() }
-    private val db by lazy { FirebaseDatabase.getInstance().reference }
+    private val userPreferences by lazy { UserPreferences(this) }
+    private lateinit var postViewModel: PostViewModel
 
     private lateinit var btnBack: ImageView
     private lateinit var userProfileImage: ShapeableImageView
@@ -43,6 +49,8 @@ class PostViewActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_post_view)
+
+        postViewModel = ViewModelProvider(this)[PostViewModel::class.java]
 
         postId = intent.getStringExtra("post_id") ?: ""
         if (postId.isEmpty()) {
@@ -112,30 +120,59 @@ class PostViewActivity : AppCompatActivity() {
     }
 
     private fun loadPost() {
-        db.child("posts").child(postId).addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val post = snapshot.getValue(Post::class.java)
-                if (post != null) {
-                    currentPost = post
-                    displayPost(post)
+        val currentUid = userPreferences.getUser()?.uid
+
+        lifecycleScope.launch {
+            try {
+                val request = GetPostRequest(postId, currentUid)
+                android.util.Log.d("PostViewActivity", "Loading post: $postId for user: $currentUid")
+
+                val response = RetrofitInstance.apiService.getPost(request)
+
+                android.util.Log.d("PostViewActivity", "Response code: ${response.code()}")
+                android.util.Log.d("PostViewActivity", "Response successful: ${response.isSuccessful}")
+                android.util.Log.d("PostViewActivity", "Response body: ${response.body()}")
+                android.util.Log.d("PostViewActivity", "Response error body: ${response.errorBody()?.string()}")
+
+                if (response.isSuccessful && response.body()?.success == true) {
+                    val apiPost = response.body()?.data?.post
+                    if (apiPost != null) {
+                        val postIsLiked = apiPost.isLiked
+
+                        // Convert ApiPost to Post model
+                        val post = Post(
+                            postId = apiPost.postId,
+                            userId = apiPost.userId,
+                            username = apiPost.username,
+                            userPhotoBase64 = apiPost.userPhotoBase64,
+                            location = apiPost.location ?: "",
+                            description = apiPost.description,
+                            images = apiPost.images,
+                            timestamp = apiPost.timestamp,
+                            likesCount = apiPost.likesCount,
+                            commentsCount = apiPost.commentsCount
+                        )
+                        currentPost = post
+                        displayPost(post, postIsLiked)
+                    } else {
+                        Toast.makeText(this@PostViewActivity, "Post data not found", Toast.LENGTH_SHORT).show()
+                        finish()
+                    }
                 } else {
-                    Toast.makeText(this@PostViewActivity, "Post not found", Toast.LENGTH_SHORT).show()
+                    val errorMsg = response.body()?.error ?: "Failed to load post"
+                    Toast.makeText(this@PostViewActivity, errorMsg, Toast.LENGTH_SHORT).show()
                     finish()
                 }
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                Toast.makeText(
-                    this@PostViewActivity,
-                    "Failed to load post",
-                    Toast.LENGTH_SHORT
-                ).show()
+            } catch (e: Exception) {
+                android.util.Log.e("PostViewActivity", "Exception loading post", e)
+                e.printStackTrace()
+                Toast.makeText(this@PostViewActivity, "Error: ${e.message}", Toast.LENGTH_LONG).show()
                 finish()
             }
-        })
+        }
     }
 
-    private fun displayPost(post: Post) {
+    private fun displayPost(post: Post, isLiked: Boolean) {
         // Set username
         username.text = post.username
 
@@ -169,11 +206,10 @@ class PostViewActivity : AppCompatActivity() {
         }
 
         // Set like button state
-        val currentUserId = auth.currentUser?.uid ?: ""
-        updateLikeButton(post.isLikedBy(currentUserId))
+        updateLikeButton(isLiked)
 
         // Set likes count
-        val count = post.getLikesCount()
+        val count = post.likesCount
         likesCount.text = when {
             count == 0 -> "Be the first to like this"
             count == 1 -> "1 like"
@@ -218,16 +254,37 @@ class PostViewActivity : AppCompatActivity() {
     }
 
     private fun toggleLike(post: Post) {
-        val currentUserId = auth.currentUser?.uid ?: return
+        val currentUid = userPreferences.getUser()?.uid ?: return
 
-        val likesRef = db.child("posts").child(post.postId).child("likes")
+        lifecycleScope.launch {
+            try {
+                val request = ToggleLikeRequest(post.postId, currentUid)
+                val response = RetrofitInstance.apiService.toggleLike(request)
 
-        if (post.isLikedBy(currentUserId)) {
-            // Unlike
-            likesRef.child(currentUserId).removeValue()
-        } else {
-            // Like
-            likesRef.child(currentUserId).setValue(true)
+                if (response.isSuccessful && response.body()?.success == true) {
+                    val data = response.body()?.data
+                    data?.let {
+                        val updatedPost = it.post
+                        val newIsLiked = updatedPost.isLiked
+                        val newLikesCount = updatedPost.likesCount
+
+                        // Update UI with new like status
+                        updateLikeButton(newIsLiked)
+                        likesCount.text = when {
+                            newLikesCount == 0 -> "Be the first to like this"
+                            newLikesCount == 1 -> "1 like"
+                            else -> "$newLikesCount likes"
+                        }
+
+                        // Update current post
+                        currentPost?.likesCount = newLikesCount
+                    }
+                } else {
+                    Toast.makeText(this@PostViewActivity, "Failed to toggle like", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(this@PostViewActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 

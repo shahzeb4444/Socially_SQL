@@ -5,20 +5,19 @@ import android.graphics.*
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.os.Bundle
+import android.util.Base64
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.NavigationUI
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.FirebaseDatabase
-import android.graphics.BitmapFactory
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.ValueEventListener
+import com.teamsx.i230610_i230040.network.RetrofitInstance
+import com.teamsx.i230610_i230040.utils.UserPreferences
+import kotlinx.coroutines.launch
 
 class HomeActivity : AppCompatActivity() {
 
@@ -26,8 +25,7 @@ class HomeActivity : AppCompatActivity() {
         const val EXTRA_START_DEST = "start_dest"
     }
 
-    private val auth by lazy { FirebaseAuth.getInstance() }
-    private val db by lazy { FirebaseDatabase.getInstance().reference }
+    private val userPreferences by lazy { UserPreferences(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,11 +64,22 @@ class HomeActivity : AppCompatActivity() {
             insets
         }
 
-        // Load and set the profile icon from Firebase (Base64)
+        // Load and set the profile icon from UserPreferences (Base64)
         loadProfileIconIntoBottomNav(bottom)
-        cleanExpiredStories()
 
+        // Cleanup expired stories
+        cleanupExpiredStories()
+    }
 
+    private fun cleanupExpiredStories() {
+        lifecycleScope.launch {
+            try {
+                RetrofitInstance.apiService.cleanupExpiredStories()
+                // Silent cleanup - no need to show result to user
+            } catch (e: Exception) {
+                // Silent fail
+            }
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -136,58 +145,39 @@ class HomeActivity : AppCompatActivity() {
                 ?.let { destId -> bottom.selectedItemId = destId }
         }
     }
-    private fun cleanExpiredStories() {
-        val currentTime = System.currentTimeMillis()
-
-        db.child("stories").addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                for (userSnap in snapshot.children) {
-                    val userId = userSnap.key ?: continue
-
-                    for (storySnap in userSnap.children) {
-                        val story = storySnap.getValue(Story::class.java)
-                        if (story != null && currentTime > story.expiresAt) {
-                            // Delete expired story
-                            db.child("stories").child(userId).child(story.storyId).removeValue()
-                        }
-                    }
-                }
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                // Silently fail
-            }
-        })
-    }
 
     private fun loadProfileIconIntoBottomNav(bottom: BottomNavigationView) {
         // disable tint so we show real colors
         bottom.itemIconTintList = null
 
-        val uid = auth.currentUser?.uid
-        if (uid == null) {
+        val user = userPreferences.getUser()
+        if (user == null || user.profileImageUrl.isNullOrEmpty()) {
             val ph = BitmapFactory.decodeResource(resources, R.drawable.profile_login_splash_small)
             setProfileIconBitmap(bottom, ph)
             return
         }
 
-        db.child("users").child(uid).child("photoBase64").get()
-            .addOnSuccessListener { snap ->
-                val b64 = snap.getValue(String::class.java)
-                if (!b64.isNullOrEmpty()) {
-                    val bmp = ImageUtils.loadBase64ImageOptimized(b64, 100)
-                    if (bmp != null) {
-                        setProfileIconBitmap(bottom, bmp)
-                        return@addOnSuccessListener
-                    }
-                }
+        try {
+            val base64String = if (user.profileImageUrl.startsWith("data:")) {
+                user.profileImageUrl.substringAfter("base64,")
+            } else {
+                user.profileImageUrl
+            }
+
+            val decodedBytes = Base64.decode(base64String, Base64.DEFAULT)
+            val bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+
+            if (bitmap != null) {
+                setProfileIconBitmap(bottom, bitmap)
+            } else {
                 val ph = BitmapFactory.decodeResource(resources, R.drawable.profile_login_splash_small)
                 setProfileIconBitmap(bottom, ph)
             }
-            .addOnFailureListener {
-                val ph = BitmapFactory.decodeResource(resources, R.drawable.profile_login_splash_small)
-                setProfileIconBitmap(bottom, ph)
-            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            val ph = BitmapFactory.decodeResource(resources, R.drawable.profile_login_splash_small)
+            setProfileIconBitmap(bottom, ph)
+        }
     }
 
     private fun setProfileIconBitmap(bottom: BottomNavigationView, bitmap: Bitmap) {

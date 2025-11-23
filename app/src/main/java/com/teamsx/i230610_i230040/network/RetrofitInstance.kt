@@ -48,12 +48,17 @@ object RetrofitInstance {
         .writeTimeout(30, TimeUnit.SECONDS)
         .build()
 
+    // Gson instance with lenient parsing to handle malformed JSON
+    private val gson = com.google.gson.GsonBuilder()
+        .setLenient()
+        .create()
+
     // Retrofit instance
     private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
             .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
     }
 

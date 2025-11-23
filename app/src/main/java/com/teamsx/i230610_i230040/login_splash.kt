@@ -1,6 +1,7 @@
 package com.teamsx.i230610_i230040
 
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Bundle
@@ -14,6 +15,7 @@ import com.google.firebase.messaging.FirebaseMessaging
 import com.teamsx.i230610_i230040.network.RetrofitInstance
 import com.teamsx.i230610_i230040.network.SaveFCMTokenRequest
 import com.teamsx.i230610_i230040.utils.UserPreferences
+import com.teamsx.i230610_i230040.utils.NotificationPermissionHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -36,6 +38,9 @@ class login_splash : AppCompatActivity() {
         val switchaccount = findViewById<TextView>(R.id.switchaccounts)
         val profilename = findViewById<TextView>(R.id.profilename)
         val profilepic = findViewById<ImageView>(R.id.profilepic)
+
+        // Request notification permission (Android 13+)
+        NotificationPermissionHelper.requestNotificationPermission(this)
 
         // 1) If not logged in, go to login
         if (!userPreferences.isLoggedIn()) {
@@ -150,6 +155,24 @@ class login_splash : AppCompatActivity() {
                 }
             } else {
                 Log.e("FCM", "Failed to get FCM token", task.exception)
+            }
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        if (requestCode == NotificationPermissionHelper.PERMISSION_REQUEST_CODE) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Log.d("Notifications", "POST_NOTIFICATIONS permission granted")
+                Toast.makeText(this, "Notifications enabled", Toast.LENGTH_SHORT).show()
+            } else {
+                Log.w("Notifications", "POST_NOTIFICATIONS permission denied")
+                Toast.makeText(this, "Please enable notifications in settings to receive updates", Toast.LENGTH_LONG).show()
             }
         }
     }
