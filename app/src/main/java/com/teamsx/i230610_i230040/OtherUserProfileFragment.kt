@@ -2,6 +2,7 @@ package com.teamsx.i230610_i230040
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -216,7 +217,68 @@ class OtherUserProfileFragment : Fragment() {
     }
 
     private fun loadUserPosts() {
-        // TODO: Convert to PHP backend - for now keep Firebase implementation
-        // This will be updated when we implement posts fetching via PHP
+        val uid = userId ?: return
+
+        lifecycleScope.launch {
+            try {
+                val request = com.teamsx.i230610_i230040.network.GetUserPostsRequest(uid)
+                Log.d("OtherUserProfile", "Requesting posts for UID: $uid")
+
+                val response = com.teamsx.i230610_i230040.network.RetrofitInstance.apiService.getUserPosts(request)
+
+                Log.d("OtherUserProfile", "Response code: ${response.code()}")
+                Log.d("OtherUserProfile", "Response success: ${response.isSuccessful}")
+                Log.d("OtherUserProfile", "Response body success: ${response.body()?.success}")
+                Log.d("OtherUserProfile", "Response body error: ${response.body()?.error}")
+
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    if (body?.success == true) {
+                        // Success response - might have 0 or more posts
+                        val posts = body.data?.posts ?: emptyList()
+
+                        Log.d("OtherUserProfile", "Successfully loaded ${posts.size} posts for user $uid")
+
+                        userPosts.clear()
+                        // Convert ApiPost to Post model for adapter
+                        userPosts.addAll(posts.map { apiPost ->
+                            Post(
+                                postId = apiPost.postId,
+                                userId = apiPost.userId,
+                                username = apiPost.username,
+                                userPhotoBase64 = apiPost.userPhotoBase64,
+                                location = apiPost.location ?: "",
+                                description = apiPost.description,
+                                images = apiPost.images,
+                                timestamp = apiPost.timestamp,
+                                likesCount = apiPost.likesCount,
+                                commentsCount = apiPost.commentsCount
+                            )
+                        })
+                        profileGridAdapter.notifyDataSetChanged()
+
+                        // Only log if empty - don't show toast for empty posts
+                        if (posts.isEmpty()) {
+                            Log.d("OtherUserProfile", "No posts found for user $uid - this is normal")
+                            // User will see empty grid - no need for toast
+                        }
+                    } else {
+                        // API returned success: false
+                        val errorMsg = body?.error ?: "Unknown error"
+                        Log.e("OtherUserProfile", "API error: $errorMsg")
+                        toast("Error loading posts: $errorMsg")
+                    }
+                } else {
+                    // HTTP error (404, 500, etc)
+                    val code = response.code()
+                    Log.e("OtherUserProfile", "HTTP error: Code=$code")
+                    toast("Server error: HTTP $code")
+                }
+            } catch (e: Exception) {
+                Log.e("OtherUserProfile", "Exception loading posts: ${e.message}", e)
+                e.printStackTrace()
+                toast("Connection error: ${e.message}")
+            }
+        }
     }
 }

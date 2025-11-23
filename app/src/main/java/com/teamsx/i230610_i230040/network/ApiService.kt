@@ -22,6 +22,12 @@ interface ApiService {
     @POST("posts/toggle_like.php")
     suspend fun toggleLike(@Body request: ToggleLikeRequest): Response<ToggleLikeResponse>
 
+    @POST("posts/get_user_posts.php")
+    suspend fun getUserPosts(@Body request: GetUserPostsRequest): Response<GetUserPostsResponse>
+
+    @POST("posts/get_post.php")
+    suspend fun getPost(@Body request: GetPostRequest): Response<GetPostResponse>
+
     // Stories
     @POST("stories/create.php")
     suspend fun createStory(@Body request: CreateStoryRequest): Response<CreateStoryResponse>
@@ -31,6 +37,9 @@ interface ApiService {
 
     @POST("stories/mark_viewed.php")
     suspend fun markStoryViewed(@Body request: MarkStoryViewedRequest): Response<BaseResponse>
+
+    @POST("stories/cleanup_expired.php")
+    suspend fun cleanupExpiredStories(): Response<BaseResponse>
 
     // Follow System
     @POST("follow/send_request.php")
@@ -70,7 +79,11 @@ interface ApiService {
     // Push Notifications
     @POST("notifications/save_fcm_token.php")
     suspend fun saveFCMToken(@Body request: SaveFCMTokenRequest): Response<SaveFCMTokenResponse>
+
+    // Comments
+    @POST("comments/get_comments.php")
+    suspend fun getComments(@Body request: GetCommentsRequest): Response<GetCommentsResponse>
+
+    @POST("comments/add_comment.php")
+    suspend fun addComment(@Body request: AddCommentRequest): Response<AddCommentResponse>
 }
-
-
-

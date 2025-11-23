@@ -90,19 +90,6 @@ data class PostDataWrapper(
     @SerializedName("post") val post: ApiPost
 )
 
-data class ApiPost(
-    @SerializedName("post_id") val postId: String,
-    @SerializedName("user_id") val userId: String,
-    @SerializedName("username") val username: String,
-    @SerializedName("user_photo_base64") val userPhotoBase64: String?,
-    @SerializedName("location") val location: String,
-    @SerializedName("description") val description: String,
-    @SerializedName("images") val images: List<String>,
-    @SerializedName("timestamp") val timestamp: Long,
-    @SerializedName("likes") val likes: Map<String, Boolean>,
-    @SerializedName("likes_count") val likesCount: Int,
-    @SerializedName("comments_count") val commentsCount: Int
-)
 
 data class GetFeedRequest(
     @SerializedName("user_id") val userId: String
@@ -343,6 +330,56 @@ data class UpdateProfileDataWrapper(
 )
 
 // ============================================================
+// GET USER POSTS & SINGLE POST MODELS
+// ============================================================
+
+data class GetUserPostsRequest(
+    @SerializedName("uid") val uid: String,
+    @SerializedName("limit") val limit: Int = 50,
+    @SerializedName("offset") val offset: Int = 0
+)
+
+data class GetUserPostsResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("data") val data: GetUserPostsDataWrapper? = null,
+    @SerializedName("error") val error: String? = null
+)
+
+data class GetUserPostsDataWrapper(
+    @SerializedName("posts") val posts: List<ApiPost>,
+    @SerializedName("count") val count: Int
+)
+
+data class GetPostRequest(
+    @SerializedName("post_id") val postId: String,
+    @SerializedName("current_uid") val currentUid: String? = null
+)
+
+data class GetPostResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("data") val data: GetPostDataWrapper? = null,
+    @SerializedName("error") val error: String? = null
+)
+
+data class GetPostDataWrapper(
+    @SerializedName("post") val post: ApiPost
+)
+
+data class ApiPost(
+    @SerializedName("post_id") val postId: String,
+    @SerializedName("user_id") val userId: String,
+    @SerializedName("username") val username: String,
+    @SerializedName("user_photo_base64") val userPhotoBase64: String? = null,
+    @SerializedName("location") val location: String? = null,
+    @SerializedName("description") val description: String,
+    @SerializedName("images") val images: List<String>,
+    @SerializedName("timestamp") val timestamp: Long,
+    @SerializedName("likes_count") val likesCount: Int = 0,
+    @SerializedName("comments_count") val commentsCount: Int = 0,
+    @SerializedName("is_liked") val isLiked: Boolean = false
+)
+
+// ============================================================
 // FCM PUSH NOTIFICATION MODELS
 // ============================================================
 
@@ -362,4 +399,47 @@ data class FCMTokenDataWrapper(
     @SerializedName("uid") val uid: String
 )
 
+// ============================================================
+// COMMENTS MODELS
+// ============================================================
 
+data class GetCommentsRequest(
+    @SerializedName("post_id") val postId: String
+)
+
+data class GetCommentsResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("data") val data: CommentsDataWrapper? = null,
+    @SerializedName("error") val error: String? = null
+)
+
+data class CommentsDataWrapper(
+    @SerializedName("comments") val comments: List<ApiComment>
+)
+
+data class ApiComment(
+    @SerializedName("comment_id") val commentId: String,
+    @SerializedName("post_id") val postId: String,
+    @SerializedName("user_id") val userId: String,
+    @SerializedName("username") val username: String,
+    @SerializedName("user_photo_base64") val userPhotoBase64: String?,
+    @SerializedName("message") val message: String,
+    @SerializedName("timestamp") val timestamp: Long
+)
+
+data class AddCommentRequest(
+    @SerializedName("post_id") val postId: String,
+    @SerializedName("user_id") val userId: String,
+    @SerializedName("message") val message: String
+)
+
+data class AddCommentResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("data") val data: AddCommentDataWrapper? = null,
+    @SerializedName("error") val error: String? = null
+)
+
+data class AddCommentDataWrapper(
+    @SerializedName("comment") val comment: ApiComment,
+    @SerializedName("comments_count") val commentsCount: Int
+)

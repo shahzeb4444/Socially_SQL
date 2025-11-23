@@ -189,10 +189,73 @@ class ProfileFragment : Fragment() {
     }
 
     private fun loadUserPosts() {
-        // TODO: Implement API call to get user posts from PHP backend
-        // For now, keeping posts empty until we create the endpoint
-        userPosts.clear()
-        profileGridAdapter.notifyDataSetChanged()
+        val uid = userPreferences.getUser()?.uid ?: return
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val request = com.teamsx.i230610_i230040.network.GetUserPostsRequest(uid)
+                Log.d("ProfileFragment", "Requesting posts for UID: $uid")
+
+                val response = com.teamsx.i230610_i230040.network.RetrofitInstance.apiService.getUserPosts(request)
+
+                Log.d("ProfileFragment", "Response code: ${response.code()}")
+                Log.d("ProfileFragment", "Response success: ${response.isSuccessful}")
+                Log.d("ProfileFragment", "Response body success: ${response.body()?.success}")
+                Log.d("ProfileFragment", "Response body error: ${response.body()?.error}")
+
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        val body = response.body()
+                        if (body?.success == true) {
+                            // Success response - might have 0 or more posts
+                            val posts = body.data?.posts ?: emptyList()
+
+                            Log.d("ProfileFragment", "Successfully loaded ${posts.size} posts for user $uid")
+
+                            userPosts.clear()
+                            // Convert ApiPost to Post model for adapter
+                            userPosts.addAll(posts.map { apiPost ->
+                                Post(
+                                    postId = apiPost.postId,
+                                    userId = apiPost.userId,
+                                    username = apiPost.username,
+                                    userPhotoBase64 = apiPost.userPhotoBase64,
+                                    location = apiPost.location ?: "",
+                                    description = apiPost.description,
+                                    images = apiPost.images,
+                                    timestamp = apiPost.timestamp,
+                                    likesCount = apiPost.likesCount,
+                                    commentsCount = apiPost.commentsCount
+                                )
+                            })
+                            profileGridAdapter.notifyDataSetChanged()
+
+                            // Only show message if empty - don't show error
+                            if (posts.isEmpty()) {
+                                Log.d("ProfileFragment", "No posts found for user $uid - this is normal")
+                                // Don't show toast for empty posts - user will see empty grid
+                            }
+                        } else {
+                            // API returned success: false
+                            val errorMsg = body?.error ?: "Unknown error"
+                            Log.e("ProfileFragment", "API error: $errorMsg")
+                            Toast.makeText(requireContext(), "Error loading posts: $errorMsg", Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        // HTTP error (404, 500, etc)
+                        val code = response.code()
+                        Log.e("ProfileFragment", "HTTP error: Code=$code")
+                        Toast.makeText(requireContext(), "Server error: HTTP $code", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Log.e("ProfileFragment", "Exception loading posts: ${e.message}", e)
+                    e.printStackTrace()
+                    Toast.makeText(requireContext(), "Connection error: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 
     private fun getCircularBitmap(bitmap: Bitmap): Bitmap {

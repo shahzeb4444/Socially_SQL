@@ -20,17 +20,19 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.imageview.ShapeableImageView
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
+import com.teamsx.i230610_i230040.utils.UserPreferences
+import com.teamsx.i230610_i230040.network.RetrofitInstance
+import com.teamsx.i230610_i230040.network.GetUserProfileRequest
+import com.teamsx.i230610_i230040.network.UpdateProfileRequest
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 
 class socialhomescreen11 : AppCompatActivity() {
 
-    private val auth by lazy { FirebaseAuth.getInstance() }
-    private val db by lazy { FirebaseDatabase.getInstance().reference }
+    private val userPreferences by lazy { UserPreferences(this) }
 
     private lateinit var profileImageView: ShapeableImageView
     private lateinit var usernameEditText: EditText
@@ -95,7 +97,7 @@ class socialhomescreen11 : AppCompatActivity() {
     }
 
     private fun loadCurrentProfile() {
-        val uid = auth.currentUser?.uid
+        val uid = userPreferences.getUser()?.uid
         if (uid == null) {
             Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show()
             finish()
@@ -105,42 +107,52 @@ class socialhomescreen11 : AppCompatActivity() {
         // Show loading state
         updateBtn.isEnabled = false
 
-        db.child("users").child(uid).addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val profile = snapshot.getValue(UserProfile::class.java)
-                if (profile != null) {
-                    displayCurrentProfile(profile)
-                } else {
-                    Toast.makeText(this@socialhomescreen11, "Profile not found", Toast.LENGTH_SHORT).show()
-                }
-                updateBtn.isEnabled = true
-            }
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val request = GetUserProfileRequest(uid, uid)
+                val response = RetrofitInstance.apiService.getUserProfile(request)
 
-            override fun onCancelled(error: DatabaseError) {
-                Toast.makeText(
-                    this@socialhomescreen11,
-                    "Failed to load profile: ${error.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
-                updateBtn.isEnabled = true
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful && response.body()?.success == true) {
+                        val profile = response.body()?.data?.user
+                        if (profile != null) {
+                            displayCurrentProfile(profile)
+                        } else {
+                            Toast.makeText(this@socialhomescreen11, "Profile not found", Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        Toast.makeText(this@socialhomescreen11, "Failed to load profile", Toast.LENGTH_SHORT).show()
+                    }
+                    updateBtn.isEnabled = true
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@socialhomescreen11, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                    updateBtn.isEnabled = true
+                }
             }
-        })
+        }
     }
 
-    private fun displayCurrentProfile(profile: UserProfile) {
+    private fun displayCurrentProfile(profile: com.teamsx.i230610_i230040.network.ApiUserProfile) {
         // Set username
         usernameEditText.setText(profile.username)
 
         // Set bio
-        bioEditText.setText(profile.bio)
+        bioEditText.setText(profile.bio ?: "")
 
         // Store current photo
-        currentPhotoBase64 = profile.photoBase64
+        currentPhotoBase64 = profile.profileImageUrl
 
         // Load profile photo
-        if (!profile.photoBase64.isNullOrEmpty()) {
+        if (!profile.profileImageUrl.isNullOrEmpty()) {
             try {
-                val bytes = Base64.decode(profile.photoBase64, Base64.DEFAULT)
+                val base64String = if (profile.profileImageUrl.startsWith("data:")) {
+                    profile.profileImageUrl.substringAfter("base64,")
+                } else {
+                    profile.profileImageUrl
+                }
+                val bytes = Base64.decode(base64String, Base64.DEFAULT)
                 val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
                 if (bitmap != null) {
                     val circularBitmap = getCircularBitmap(bitmap)
@@ -156,7 +168,7 @@ class socialhomescreen11 : AppCompatActivity() {
     }
 
     private fun updateProfile() {
-        val uid = auth.currentUser?.uid
+        val uid = userPreferences.getUser()?.uid
         if (uid == null) {
             Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show()
             return
@@ -182,54 +194,55 @@ class socialhomescreen11 : AppCompatActivity() {
         updateBtn.isEnabled = false
         updateBtn.text = "Updating..."
 
-        // First, get the current profile to preserve other fields
-        db.child("users").child(uid).addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val currentProfile = snapshot.getValue(UserProfile::class.java)
-                if (currentProfile != null) {
-                    // Create updated profile with new values
-                    val updatedProfile = currentProfile.copy(
-                        username = newUsername,
-                        bio = newBio,
-                        photoBase64 = if (hasPhotoChanged) currentPhotoBase64 else currentProfile.photoBase64
-                    )
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val request = UpdateProfileRequest(
+                    uid = uid,
+                    fullName = newUsername, // Using fullName field for username
+                    bio = newBio,
+                    profileImageUrl = if (hasPhotoChanged) currentPhotoBase64 else null,
+                    coverImageUrl = null
+                )
 
-                    // Update in database
-                    db.child("users").child(uid).setValue(updatedProfile.toMap())
-                        .addOnSuccessListener {
-                            Toast.makeText(
-                                this@socialhomescreen11,
-                                "Profile updated successfully",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            returnToProfile()
+                val response = RetrofitInstance.apiService.updateUserProfile(request)
+
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful && response.body()?.success == true) {
+                        val updatedUser = response.body()?.data?.user
+                        if (updatedUser != null) {
+                            // Update UserPreferences with new data
+                            val currentUser = userPreferences.getUser()
+                            currentUser?.let { user ->
+                                val updated = user.copy(
+                                    fullName = updatedUser.fullName ?: user.fullName,
+                                    bio = updatedUser.bio,
+                                    profileImageUrl = updatedUser.profileImageUrl
+                                )
+                                userPreferences.saveUser(updated)
+                            }
                         }
-                        .addOnFailureListener { e ->
-                            Toast.makeText(
-                                this@socialhomescreen11,
-                                "Failed to update profile: ${e.message}",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            updateBtn.isEnabled = true
-                            updateBtn.text = "Update"
-                        }
-                } else {
-                    Toast.makeText(this@socialhomescreen11, "Profile not found", Toast.LENGTH_SHORT).show()
+
+                        Toast.makeText(
+                            this@socialhomescreen11,
+                            "Profile updated successfully",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        returnToProfile()
+                    } else {
+                        val errorMsg = response.body()?.error ?: "Failed to update profile"
+                        Toast.makeText(this@socialhomescreen11, errorMsg, Toast.LENGTH_SHORT).show()
+                        updateBtn.isEnabled = true
+                        updateBtn.text = "Update"
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@socialhomescreen11, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
                     updateBtn.isEnabled = true
                     updateBtn.text = "Update"
                 }
             }
-
-            override fun onCancelled(error: DatabaseError) {
-                Toast.makeText(
-                    this@socialhomescreen11,
-                    "Failed to update profile: ${error.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
-                updateBtn.isEnabled = true
-                updateBtn.text = "Update"
-            }
-        })
+        }
     }
 
     private fun returnToProfile() {

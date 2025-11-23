@@ -10,11 +10,14 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.NavigationUI
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.teamsx.i230610_i230040.network.RetrofitInstance
 import com.teamsx.i230610_i230040.utils.UserPreferences
+import kotlinx.coroutines.launch
 
 class HomeActivity : AppCompatActivity() {
 
@@ -63,7 +66,20 @@ class HomeActivity : AppCompatActivity() {
 
         // Load and set the profile icon from UserPreferences (Base64)
         loadProfileIconIntoBottomNav(bottom)
-        // TODO: cleanExpiredStories - will be handled by PHP cron job or API call
+
+        // Cleanup expired stories
+        cleanupExpiredStories()
+    }
+
+    private fun cleanupExpiredStories() {
+        lifecycleScope.launch {
+            try {
+                RetrofitInstance.apiService.cleanupExpiredStories()
+                // Silent cleanup - no need to show result to user
+            } catch (e: Exception) {
+                // Silent fail
+            }
+        }
     }
 
     override fun onNewIntent(intent: Intent) {

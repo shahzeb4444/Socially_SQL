@@ -35,11 +35,11 @@ class PostRepository(private val apiService: ApiService) {
                         userId = apiPost.userId,
                         username = apiPost.username,
                         userPhotoBase64 = apiPost.userPhotoBase64,
-                        location = apiPost.location,
+                        location = apiPost.location ?: "",
                         description = apiPost.description,
                         images = apiPost.images,
                         timestamp = apiPost.timestamp,
-                        likes = apiPost.likes,
+                        likesCount = apiPost.likesCount,
                         commentsCount = apiPost.commentsCount
                     )
                     Resource.Success(post)
@@ -68,11 +68,11 @@ class PostRepository(private val apiService: ApiService) {
                             userId = apiPost.userId,
                             username = apiPost.username,
                             userPhotoBase64 = apiPost.userPhotoBase64,
-                            location = apiPost.location,
+                            location = apiPost.location ?: "",
                             description = apiPost.description,
                             images = apiPost.images,
                             timestamp = apiPost.timestamp,
-                            likes = apiPost.likes,
+                            likesCount = apiPost.likesCount,
                             commentsCount = apiPost.commentsCount
                         )
                     }
@@ -106,11 +106,11 @@ class PostRepository(private val apiService: ApiService) {
                         userId = apiPost.userId,
                         username = apiPost.username,
                         userPhotoBase64 = apiPost.userPhotoBase64,
-                        location = apiPost.location,
+                        location = apiPost.location ?: "",
                         description = apiPost.description,
                         images = apiPost.images,
                         timestamp = apiPost.timestamp,
-                        likes = apiPost.likes,
+                        likesCount = apiPost.likesCount,
                         commentsCount = apiPost.commentsCount
                     )
                     Resource.Success(post)
