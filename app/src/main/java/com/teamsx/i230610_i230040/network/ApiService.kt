@@ -86,4 +86,26 @@ interface ApiService {
 
     @POST("comments/add_comment.php")
     suspend fun addComment(@Body request: AddCommentRequest): Response<AddCommentResponse>
+
+    // Messaging
+    @POST("messages/get_chat_users.php")
+    suspend fun getChatUsers(@Body request: GetChatUsersRequest): Response<GetChatUsersResponse>
+
+    @POST("messages/get_messages.php")
+    suspend fun getMessages(@Body request: GetMessagesRequest): Response<GetMessagesResponse>
+
+    @POST("messages/send_message.php")
+    suspend fun sendMessage(@Body request: SendMessageRequest): Response<SendMessageResponse>
+
+    @POST("messages/edit_message.php")
+    suspend fun editMessage(@Body request: EditMessageRequest): Response<EditMessageResponse>
+
+    @POST("messages/delete_message.php")
+    suspend fun deleteMessage(@Body request: DeleteMessageRequest): Response<DeleteMessageResponse>
+
+    @POST("messages/update_status.php")
+    suspend fun updateStatus(@Body request: UpdateStatusRequest): Response<UpdateStatusResponse>
+
+    @POST("messages/poll_new_messages.php")
+    suspend fun pollNewMessages(@Body request: PollNewMessagesRequest): Response<PollNewMessagesResponse>
 }

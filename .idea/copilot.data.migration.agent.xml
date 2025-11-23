@@ -26,6 +26,18 @@
               <option value="37fb3766-967b-4833-92f4-26fa2221f63f" />
               <option value="331f2144-6053-499c-b67d-3cdb6d462c68" />
               <option value="cb58c001-020c-48d4-80dd-26ce3c7dce90" />
+              <option value="583e3de2-4599-4714-94b6-54f404db3d75" />
+              <option value="626f74f8-fc69-48ab-8943-214f45cc624e" />
+              <option value="7fac12a5-a1f8-4c03-a0e2-0b1156853c3e" />
+              <option value="b6ed5b80-eaa5-47ff-8be2-baf069373437" />
+              <option value="9923c339-b41a-4763-aedd-d8687d74374e" />
+              <option value="99d3d0be-8604-4b49-ae2a-f9b0d3eba976" />
+              <option value="55837d36-b9dd-4a4a-b3a2-18e74b4f265d" />
+              <option value="2fdaa040-b8df-43f1-885e-dc0eb1be4558" />
+              <option value="efa1a732-9aaa-42f7-8d84-4e25f9c749d5" />
+              <option value="4e177b0e-b51f-4f72-ac20-221f1fafbf1b" />
+              <option value="79a61a4f-29f4-43de-baf7-318deb2726f7" />
+              <option value="ee53b438-0748-4816-8861-6ccb23494bdb" />
             </set>
           </value>
         </entry>
@@ -186,6 +198,17 @@
           <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/endpoints/comments/add_comment.php" />
           <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/setup_comments_table.sql" />
           <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/test_comments.html" />
+          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/setup_messaging_tables.sql" />
+          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/endpoints/messages/get_chat_users.php" />
+          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/endpoints/messages/get_messages.php" />
+          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/endpoints/messages/send_message.php" />
+          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/endpoints/messages/edit_message.php" />
+          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/endpoints/messages/delete_message.php" />
+          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/endpoints/messages/update_status.php" />
+          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/endpoints/messages/poll_new_messages.php" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/socialhomescreen4.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/socialhomescreenchat.kt" />
+          <option value="file://$PROJECT_DIR$/../../../../xampp/htdocs/socially_api/test_chat_users.html" />
         </set>
       </entry>
       <entry key="ae9ab481-32ec-4a94-a17f-12bd24b83900" />

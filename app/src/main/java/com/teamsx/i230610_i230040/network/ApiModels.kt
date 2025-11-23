@@ -443,3 +443,156 @@ data class AddCommentDataWrapper(
     @SerializedName("comment") val comment: ApiComment,
     @SerializedName("comments_count") val commentsCount: Int
 )
+
+// ============================================================
+// MESSAGING MODELS
+// ============================================================
+
+// Get chat users
+data class GetChatUsersRequest(
+    @SerializedName("user_id") val userId: String
+)
+
+data class GetChatUsersResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("data") val data: ChatUsersDataWrapper? = null,
+    @SerializedName("error") val error: String? = null
+)
+
+data class ChatUsersDataWrapper(
+    @SerializedName("users") val users: List<ApiChatUser>
+)
+
+data class ApiChatUser(
+    @SerializedName("uid") val uid: String,
+    @SerializedName("username") val username: String,
+    @SerializedName("full_name") val fullName: String?,
+    @SerializedName("profile_image_url") val profileImageUrl: String?,
+    @SerializedName("is_online") val isOnline: Boolean,
+    @SerializedName("last_seen") val lastSeen: Long
+)
+
+// Get messages
+data class GetMessagesRequest(
+    @SerializedName("chat_id") val chatId: String,
+    @SerializedName("limit") val limit: Int = 50,
+    @SerializedName("before_timestamp") val beforeTimestamp: Long = Long.MAX_VALUE
+)
+
+data class GetMessagesResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("data") val data: MessagesDataWrapper? = null,
+    @SerializedName("error") val error: String? = null
+)
+
+data class MessagesDataWrapper(
+    @SerializedName("messages") val messages: List<ApiMessage>
+)
+
+data class ApiMessage(
+    @SerializedName("message_id") val messageId: String,
+    @SerializedName("chat_id") val chatId: String,
+    @SerializedName("sender_id") val senderId: String,
+    @SerializedName("sender_username") val senderUsername: String,
+    @SerializedName("text") val text: String,
+    @SerializedName("timestamp") val timestamp: Long,
+    @SerializedName("is_edited") val isEdited: Boolean,
+    @SerializedName("is_deleted") val isDeleted: Boolean,
+    @SerializedName("deleted_at") val deletedAt: Long,
+    @SerializedName("media_type") val mediaType: String,
+    @SerializedName("media_url") val mediaUrl: String,
+    @SerializedName("media_caption") val mediaCaption: String
+)
+
+// Send message
+data class SendMessageRequest(
+    @SerializedName("message_id") val messageId: String? = null,
+    @SerializedName("chat_id") val chatId: String,
+    @SerializedName("sender_id") val senderId: String,
+    @SerializedName("sender_username") val senderUsername: String,
+    @SerializedName("text") val text: String = "",
+    @SerializedName("media_type") val mediaType: String = "",
+    @SerializedName("media_url") val mediaUrl: String = "",
+    @SerializedName("media_caption") val mediaCaption: String = ""
+)
+
+data class SendMessageResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("data") val data: SendMessageDataWrapper? = null,
+    @SerializedName("error") val error: String? = null
+)
+
+data class SendMessageDataWrapper(
+    @SerializedName("message") val message: ApiMessage
+)
+
+// Edit message
+data class EditMessageRequest(
+    @SerializedName("message_id") val messageId: String,
+    @SerializedName("text") val text: String
+)
+
+data class EditMessageResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("data") val data: EditMessageDataWrapper? = null,
+    @SerializedName("error") val error: String? = null
+)
+
+data class EditMessageDataWrapper(
+    @SerializedName("message_id") val messageId: String,
+    @SerializedName("text") val text: String,
+    @SerializedName("is_edited") val isEdited: Boolean
+)
+
+// Delete message
+data class DeleteMessageRequest(
+    @SerializedName("message_id") val messageId: String
+)
+
+data class DeleteMessageResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("data") val data: DeleteMessageDataWrapper? = null,
+    @SerializedName("error") val error: String? = null
+)
+
+data class DeleteMessageDataWrapper(
+    @SerializedName("message_id") val messageId: String,
+    @SerializedName("is_deleted") val isDeleted: Boolean,
+    @SerializedName("deleted_at") val deletedAt: Long
+)
+
+// Update status
+data class UpdateStatusRequest(
+    @SerializedName("user_id") val userId: String,
+    @SerializedName("is_online") val isOnline: Boolean
+)
+
+data class UpdateStatusResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("data") val data: UpdateStatusDataWrapper? = null,
+    @SerializedName("error") val error: String? = null
+)
+
+data class UpdateStatusDataWrapper(
+    @SerializedName("user_id") val userId: String,
+    @SerializedName("is_online") val isOnline: Boolean,
+    @SerializedName("last_seen") val lastSeen: Long
+)
+
+// Poll new messages
+data class PollNewMessagesRequest(
+    @SerializedName("chat_id") val chatId: String,
+    @SerializedName("since_timestamp") val sinceTimestamp: Long
+)
+
+data class PollNewMessagesResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("data") val data: PollMessagesDataWrapper? = null,
+    @SerializedName("error") val error: String? = null
+)
+
+data class PollMessagesDataWrapper(
+    @SerializedName("messages") val messages: List<ApiMessage>,
+    @SerializedName("count") val count: Int
+)
+

@@ -10,9 +10,12 @@ import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.text.format.DateUtils
 import android.util.Base64
+import android.util.Log
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
@@ -21,16 +24,12 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.firebase.database.ChildEventListener
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ServerValue
-import com.google.firebase.database.ValueEventListener
 import com.teamsx.i230610_i230040.utils.UserPreferences
+import com.teamsx.i230610_i230040.network.*
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 class socialhomescreenchat : AppCompatActivity() {
@@ -47,7 +46,6 @@ class socialhomescreenchat : AppCompatActivity() {
     private lateinit var messageAdapter: MessageAdapter
     private val messagesList = mutableListOf<Message>()
 
-    private val db by lazy { FirebaseDatabase.getInstance().reference }
     private val userPreferences by lazy { UserPreferences(this) }
 
     private lateinit var chatId: String
@@ -56,15 +54,15 @@ class socialhomescreenchat : AppCompatActivity() {
     private val currentUserId: String by lazy { userPreferences.getUser()?.uid ?: "" }
     private val currentUsername: String by lazy { userPreferences.getUser()?.username ?: "Anonymous" }
 
-    // Database reference for chat messages
-    private val database: DatabaseReference by lazy {
-        FirebaseDatabase.getInstance().reference.child("chats").child(chatId)
-    }
-
     private var photoUri: Uri? = null
-    private var otherUserStatusListener: ValueEventListener? = null
     private var screenshotDetector: ScreenshotDetector? = null
     private var pendingCallType: CallType? = null
+
+    // Polling for new messages
+    private var lastMessageTimestamp: Long = 0L
+    private val pollHandler = Handler(Looper.getMainLooper())
+    private val pollInterval = 2000L // Poll every 2 seconds
+    private var isPolling = false
 
     private companion object {
         private const val STATUS_ONLINE_LABEL = "Online"
@@ -188,18 +186,16 @@ class socialhomescreenchat : AppCompatActivity() {
         }
         recyclerView.adapter = messageAdapter
 
-        // Database reference
+        // Update user online status
         if (currentUserId.isNotEmpty()) {
-            val userStatusRef = db.child("users").child(currentUserId)
-            userStatusRef.child("isOnline").onDisconnect().setValue(false)
-            userStatusRef.child("lastSeen").onDisconnect().setValue(ServerValue.TIMESTAMP)
+            updateOnlineStatus(true)
         }
 
         // Screenshot detection
         screenshotDetector = ScreenshotDetector(this)
         screenshotDetector?.startDetection {
             Toast.makeText(this@socialhomescreenchat, "Screenshot detected!", Toast.LENGTH_SHORT).show()
-            sendScreenshotNotice() // <-- add notice into this chat
+            sendScreenshotNotice()
         }
 
         // Back button
@@ -229,11 +225,149 @@ class socialhomescreenchat : AppCompatActivity() {
         voiceCallButton.setOnClickListener { startCallWithPermissions(CallType.VOICE) }
         videoCallButton.setOnClickListener { startCallWithPermissions(CallType.VIDEO) }
 
-        // Real-time load
-        loadMessagesRealTime()
+        // Load initial messages and start polling
+        loadInitialMessages()
+        startMessagePolling()
+    }
 
-        // Monitor other user's online status
-        monitorUserStatus()
+    // Update user online status via API
+    private fun updateOnlineStatus(isOnline: Boolean) {
+        lifecycleScope.launch {
+            try {
+                val request = UpdateStatusRequest(currentUserId, isOnline)
+                RetrofitInstance.apiService.updateStatus(request)
+            } catch (e: Exception) {
+                Log.e("socialhomescreenchat", "Failed to update status", e)
+            }
+        }
+    }
+
+    // Load initial messages
+    private fun loadInitialMessages() {
+        lifecycleScope.launch {
+            try {
+                val request = GetMessagesRequest(chatId, limit = 50)
+                val response = RetrofitInstance.apiService.getMessages(request)
+
+                if (response.isSuccessful && response.body()?.success == true) {
+                    val apiMessages = response.body()?.data?.messages ?: emptyList()
+
+                    messagesList.clear()
+                    apiMessages.forEach { apiMsg ->
+                        val msg = Message(
+                            messageId = apiMsg.messageId,
+                            senderId = apiMsg.senderId,
+                            senderUsername = apiMsg.senderUsername,
+                            text = apiMsg.text,
+                            timestamp = apiMsg.timestamp,
+                            isEdited = apiMsg.isEdited,
+                            isDeleted = apiMsg.isDeleted,
+                            deletedAt = apiMsg.deletedAt,
+                            mediaType = apiMsg.mediaType,
+                            mediaUrl = apiMsg.mediaUrl,
+                            mediaCaption = apiMsg.mediaCaption
+                        )
+                        messagesList.add(msg)
+                        if (msg.timestamp > lastMessageTimestamp) {
+                            lastMessageTimestamp = msg.timestamp
+                        }
+                    }
+
+                    messageAdapter.notifyDataSetChanged()
+                    if (messagesList.isNotEmpty()) {
+                        recyclerView.scrollToPosition(messagesList.size - 1)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("socialhomescreenchat", "Error loading messages", e)
+                Toast.makeText(this@socialhomescreenchat, "Error loading messages", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // Start polling for new messages
+    private fun startMessagePolling() {
+        if (isPolling) return
+        isPolling = true
+
+        pollHandler.postDelayed(object : Runnable {
+            override fun run() {
+                pollNewMessages()
+                if (isPolling) {
+                    pollHandler.postDelayed(this, pollInterval)
+                }
+            }
+        }, pollInterval)
+    }
+
+    // Poll for new messages
+    private fun pollNewMessages() {
+        lifecycleScope.launch {
+            try {
+                val request = PollNewMessagesRequest(chatId, lastMessageTimestamp)
+                val response = RetrofitInstance.apiService.pollNewMessages(request)
+
+                if (response.isSuccessful && response.body()?.success == true) {
+                    val newMessages = response.body()?.data?.messages ?: emptyList()
+
+                    newMessages.forEach { apiMsg ->
+                        // Check if message already exists (in case of edit/delete)
+                        val existingIndex = messagesList.indexOfFirst { it.messageId == apiMsg.messageId }
+
+                        if (existingIndex != -1) {
+                            // Update existing message
+                            val msg = Message(
+                                messageId = apiMsg.messageId,
+                                senderId = apiMsg.senderId,
+                                senderUsername = apiMsg.senderUsername,
+                                text = apiMsg.text,
+                                timestamp = apiMsg.timestamp,
+                                isEdited = apiMsg.isEdited,
+                                isDeleted = apiMsg.isDeleted,
+                                deletedAt = apiMsg.deletedAt,
+                                mediaType = apiMsg.mediaType,
+                                mediaUrl = apiMsg.mediaUrl,
+                                mediaCaption = apiMsg.mediaCaption
+                            )
+                            messagesList[existingIndex] = msg
+                            messageAdapter.notifyItemChanged(existingIndex)
+                        } else {
+                            // Add new message
+                            val msg = Message(
+                                messageId = apiMsg.messageId,
+                                senderId = apiMsg.senderId,
+                                senderUsername = apiMsg.senderUsername,
+                                text = apiMsg.text,
+                                timestamp = apiMsg.timestamp,
+                                isEdited = apiMsg.isEdited,
+                                isDeleted = apiMsg.isDeleted,
+                                deletedAt = apiMsg.deletedAt,
+                                mediaType = apiMsg.mediaType,
+                                mediaUrl = apiMsg.mediaUrl,
+                                mediaCaption = apiMsg.mediaCaption
+                            )
+                            messagesList.add(msg)
+                            messageAdapter.notifyItemInserted(messagesList.size - 1)
+                            recyclerView.scrollToPosition(messagesList.size - 1)
+                        }
+
+                        if (apiMsg.timestamp > lastMessageTimestamp) {
+                            lastMessageTimestamp = apiMsg.timestamp
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("socialhomescreenchat", "Error polling messages", e)
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        isPolling = false
+        pollHandler.removeCallbacksAndMessages(null)
+        updateOnlineStatus(false)
+        screenshotDetector?.stopDetection()
     }
 
     // ===== Screenshot notice to chat =====
@@ -242,20 +376,19 @@ class socialhomescreenchat : AppCompatActivity() {
         if (now - lastScreenshotNotifyAt < 8000) return // throttle 8s
         lastScreenshotNotifyAt = now
 
-        val messageId = database.push().key ?: return
-        val msg = Message(
-            messageId = messageId,
-            senderId = currentUserId,
-            senderUsername = currentUsername,
-            text = "⚠️ Screenshot was detected.",
-            timestamp = now,
-            isEdited = false,
-            isDeleted = false,
-            mediaType = "",
-            mediaUrl = "",
-            mediaCaption = ""
-        )
-        database.child(messageId).setValue(msg)
+        lifecycleScope.launch {
+            try {
+                val request = SendMessageRequest(
+                    chatId = chatId,
+                    senderId = currentUserId,
+                    senderUsername = currentUsername,
+                    text = "⚠️ Screenshot was detected."
+                )
+                RetrofitInstance.apiService.sendMessage(request)
+            } catch (e: Exception) {
+                Log.e("socialhomescreenchat", "Failed to send screenshot notice", e)
+            }
+        }
     }
 
     private fun startCallWithPermissions(type: CallType) {
@@ -313,39 +446,40 @@ class socialhomescreenchat : AppCompatActivity() {
         photoUri?.let { cameraLauncher.launch(it) }
     }
 
-    // ===== Image → Base64 and send to Realtime DB =====
+    // ===== Image → Base64 and send via API =====
 
     private fun encodeAndSendImage(uri: Uri, type: String) {
-        val messageId = database.push().key ?: return
-        val timestamp = System.currentTimeMillis()
-
         val base64 = uriToBase64(uri, maxSide = 1280, jpegQuality = 80)
         if (base64 == null) {
             Toast.makeText(this, "Failed to read image", Toast.LENGTH_LONG).show()
             return
         }
 
-        val msg = Message(
-            messageId = messageId,
-            senderId = currentUserId,
-            senderUsername = currentUsername,
-            text = "",
-            timestamp = timestamp,
-            mediaType = type,          // "image"
-            mediaUrl = base64,         // base64 here
-            mediaCaption = messageInput.text.toString().trim(),
-            isEdited = false,
-            isDeleted = false
-        )
+        lifecycleScope.launch {
+            try {
+                val request = SendMessageRequest(
+                    chatId = chatId,
+                    senderId = currentUserId,
+                    senderUsername = currentUsername,
+                    text = "",
+                    mediaType = type,
+                    mediaUrl = base64,
+                    mediaCaption = messageInput.text.toString().trim()
+                )
 
-        database.child(messageId).setValue(msg)
-            .addOnSuccessListener {
-                Toast.makeText(this, "Image sent", Toast.LENGTH_SHORT).show()
-                messageInput.text.clear()
+                val response = RetrofitInstance.apiService.sendMessage(request)
+
+                if (response.isSuccessful && response.body()?.success == true) {
+                    Toast.makeText(this@socialhomescreenchat, "Image sent", Toast.LENGTH_SHORT).show()
+                    messageInput.text.clear()
+                } else {
+                    Toast.makeText(this@socialhomescreenchat, "Failed to send image", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Log.e("socialhomescreenchat", "Error sending image", e)
+                Toast.makeText(this@socialhomescreenchat, "Error: ${e.message}", Toast.LENGTH_LONG).show()
             }
-            .addOnFailureListener { e ->
-                Toast.makeText(this, "Failed: ${e.message}", Toast.LENGTH_LONG).show()
-            }
+        }
     }
 
     private fun uriToBase64(uri: Uri, maxSide: Int = 1280, jpegQuality: Int = 80): String? {
@@ -378,95 +512,30 @@ class socialhomescreenchat : AppCompatActivity() {
     // ===== Text messages =====
 
     private fun sendMessage(text: String) {
-        val messageId = database.push().key ?: return
-        val timestamp = System.currentTimeMillis()
+        lifecycleScope.launch {
+            try {
+                val request = SendMessageRequest(
+                    chatId = chatId,
+                    senderId = currentUserId,
+                    senderUsername = currentUsername,
+                    text = text
+                )
 
-        val message = Message(
-            messageId = messageId,
-            senderId = currentUserId,
-            senderUsername = currentUsername,
-            text = text,
-            timestamp = timestamp,
-            isEdited = false,
-            isDeleted = false
-        )
+                val response = RetrofitInstance.apiService.sendMessage(request)
 
-        database.child(messageId).setValue(message)
-            .addOnSuccessListener { Toast.makeText(this, "Message sent", Toast.LENGTH_SHORT).show() }
-            .addOnFailureListener { e ->
-                Toast.makeText(this, "Failed: ${e.message}", Toast.LENGTH_LONG).show()
-                android.util.Log.e("SendMessage", "Error: ", e)
-            }
-    }
-
-    // ===== Realtime load =====
-
-    private fun loadMessagesRealTime() {
-        database.addChildEventListener(object : ChildEventListener {
-            override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
-                val message = snapshot.getValue(Message::class.java) ?: return
-                messagesList.add(message)
-                messageAdapter.notifyItemInserted(messagesList.size - 1)
-                recyclerView.scrollToPosition(messagesList.size - 1)
-            }
-
-            override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
-                val updated = snapshot.getValue(Message::class.java) ?: return
-                val idx = messagesList.indexOfFirst { it.messageId == updated.messageId }
-                if (idx != -1) {
-                    messagesList[idx] = updated
-                    messageAdapter.notifyItemChanged(idx)
+                if (response.isSuccessful && response.body()?.success == true) {
+                    // Message sent successfully - polling will fetch it
+                } else {
+                    val errorMsg = response.body()?.error ?: "Failed to send message"
+                    Toast.makeText(this@socialhomescreenchat, errorMsg, Toast.LENGTH_SHORT).show()
                 }
+            } catch (e: Exception) {
+                Log.e("socialhomescreenchat", "Error sending message", e)
+                Toast.makeText(this@socialhomescreenchat, "Error: ${e.message}", Toast.LENGTH_LONG).show()
             }
-
-            override fun onChildRemoved(snapshot: DataSnapshot) {}
-            override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {}
-            override fun onCancelled(error: DatabaseError) {
-                Toast.makeText(this@socialhomescreenchat, "Error loading messages", Toast.LENGTH_SHORT).show()
-            }
-        })
-    }
-
-    // ===== Presence =====
-
-    private fun monitorUserStatus() {
-        if (otherUserId.isEmpty()) return
-
-        val listener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val isOnline = parseOnlineValue(snapshot.child("isOnline").value)
-                val lastSeen = parseLastSeenValue(snapshot.child("lastSeen").value)
-                updateOnlineStatusUI(isOnline, lastSeen)
-            }
-
-            override fun onCancelled(error: DatabaseError) {}
-        }
-        FirebaseDatabase.getInstance().reference.child("users").child(otherUserId)
-            .addValueEventListener(listener)
-        otherUserStatusListener = listener
-    }
-
-    private fun updateOnlineStatusUI(isOnline: Boolean, lastSeen: Long) {
-        if (!::onlineStatusText.isInitialized) return
-
-        if (isOnline) {
-            onlineStatusText.text = STATUS_ONLINE_LABEL
-            onlineStatusText.setTextColor(STATUS_ONLINE_COLOR)
-        } else {
-            val statusText = if (lastSeen > 0L) {
-                val relativeTime = DateUtils.getRelativeTimeSpanString(
-                    lastSeen,
-                    System.currentTimeMillis(),
-                    DateUtils.MINUTE_IN_MILLIS
-                ).toString()
-                String.format(Locale.getDefault(), STATUS_LAST_SEEN_FORMAT, relativeTime)
-            } else {
-                STATUS_OFFLINE_LABEL
-            }
-            onlineStatusText.text = statusText
-            onlineStatusText.setTextColor(STATUS_OFFLINE_COLOR)
         }
     }
+
 
     // ===== Edit / Delete =====
 
@@ -497,11 +566,27 @@ class socialhomescreenchat : AppCompatActivity() {
             .setPositiveButton("Save") { _, _ ->
                 val newText = editText.text.toString().trim()
                 if (newText.isNotEmpty() && newText != message.text) {
-                    val updated = message.copy(text = newText, isEdited = true)
-                    database.child(message.messageId).setValue(updated)
-                        .addOnSuccessListener {
-                            Toast.makeText(this@socialhomescreenchat, "Message edited", Toast.LENGTH_SHORT).show()
+                    lifecycleScope.launch {
+                        try {
+                            val request = EditMessageRequest(message.messageId, newText)
+                            val response = RetrofitInstance.apiService.editMessage(request)
+
+                            if (response.isSuccessful && response.body()?.success == true) {
+                                Toast.makeText(this@socialhomescreenchat, "Message edited", Toast.LENGTH_SHORT).show()
+                                // Update local message
+                                val idx = messagesList.indexOfFirst { it.messageId == message.messageId }
+                                if (idx != -1) {
+                                    messagesList[idx] = message.copy(text = newText, isEdited = true)
+                                    messageAdapter.notifyItemChanged(idx)
+                                }
+                            } else {
+                                Toast.makeText(this@socialhomescreenchat, "Failed to edit message", Toast.LENGTH_SHORT).show()
+                            }
+                        } catch (e: Exception) {
+                            Log.e("socialhomescreenchat", "Error editing message", e)
+                            Toast.makeText(this@socialhomescreenchat, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
                         }
+                    }
                 }
             }
             .setNegativeButton("Cancel", null)
@@ -509,24 +594,30 @@ class socialhomescreenchat : AppCompatActivity() {
     }
 
     private fun deleteMessage(message: Message) {
-        val updated = message.copy(
-            isDeleted = true,
-            text = "[This message was deleted]",
-            deletedAt = System.currentTimeMillis()
-        )
-        database.child(message.messageId).setValue(updated)
-            .addOnSuccessListener { Toast.makeText(this, "Message deleted", Toast.LENGTH_SHORT).show() }
-    }
+        lifecycleScope.launch {
+            try {
+                val request = DeleteMessageRequest(message.messageId)
+                val response = RetrofitInstance.apiService.deleteMessage(request)
 
-    override fun onDestroy() {
-        super.onDestroy()
-        screenshotDetector?.stopDetection()
-        otherUserStatusListener?.let {
-            if (otherUserId.isNotEmpty()) {
-                FirebaseDatabase.getInstance().reference.child("users").child(otherUserId)
-                    .removeEventListener(it)
+                if (response.isSuccessful && response.body()?.success == true) {
+                    Toast.makeText(this@socialhomescreenchat, "Message deleted", Toast.LENGTH_SHORT).show()
+                    // Update local message
+                    val idx = messagesList.indexOfFirst { it.messageId == message.messageId }
+                    if (idx != -1) {
+                        messagesList[idx] = message.copy(
+                            isDeleted = true,
+                            text = "[This message was deleted]",
+                            deletedAt = System.currentTimeMillis()
+                        )
+                        messageAdapter.notifyItemChanged(idx)
+                    }
+                } else {
+                    Toast.makeText(this@socialhomescreenchat, "Failed to delete message", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Log.e("socialhomescreenchat", "Error deleting message", e)
+                Toast.makeText(this@socialhomescreenchat, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
-        otherUserStatusListener = null
     }
 }
