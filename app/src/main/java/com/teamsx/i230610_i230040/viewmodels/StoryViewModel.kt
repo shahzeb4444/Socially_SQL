@@ -21,6 +21,12 @@ class StoryViewModel : ViewModel() {
     private val _feedStoriesState = MutableLiveData<Resource<List<StoryGroup>>?>()
     val feedStoriesState: LiveData<Resource<List<StoryGroup>>?> = _feedStoriesState
 
+    private val _userStoriesState = MutableLiveData<Resource<List<Story>>?>()
+    val userStoriesState: LiveData<Resource<List<Story>>?> = _userStoriesState
+
+    private val _deleteStoryState = MutableLiveData<Resource<Boolean>?>()
+    val deleteStoryState: LiveData<Resource<Boolean>?> = _deleteStoryState
+
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
 
@@ -68,8 +74,40 @@ class StoryViewModel : ViewModel() {
         }
     }
 
+    fun getUserStories(userId: String, viewerId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _userStoriesState.value = Resource.Loading()
+
+            val result = repository.getUserStories(userId, viewerId)
+
+            _userStoriesState.value = result
+            _isLoading.value = false
+        }
+    }
+
+    fun deleteStory(storyId: String, userId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _deleteStoryState.value = Resource.Loading()
+
+            val result = repository.deleteStory(storyId, userId)
+
+            _deleteStoryState.value = result
+            _isLoading.value = false
+        }
+    }
+
     fun clearCreateStoryState() {
         _createStoryState.postValue(null)
+    }
+
+    fun clearDeleteStoryState() {
+        _deleteStoryState.postValue(null)
+    }
+
+    fun clearUserStoriesState() {
+        _userStoriesState.postValue(null)
     }
 }
 

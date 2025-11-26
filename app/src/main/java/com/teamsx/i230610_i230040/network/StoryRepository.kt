@@ -123,5 +123,66 @@ class StoryRepository(private val apiService: ApiService) {
             Resource.Error(e.message ?: "Network error")
         }
     }
+
+    suspend fun getUserStories(userId: String, viewerId: String): Resource<List<Story>> = withContext(Dispatchers.IO) {
+        try {
+            val request = GetUserStoriesRequest(
+                userId = userId,
+                viewerId = viewerId
+            )
+
+            val response = apiService.getUserStories(request)
+
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null && body.success && body.data != null) {
+                    val stories = body.data.stories.map { apiStory ->
+                        Story(
+                            storyId = apiStory.storyId,
+                            userId = apiStory.userId,
+                            username = apiStory.username,
+                            userPhotoBase64 = apiStory.userPhotoBase64,
+                            imageBase64 = apiStory.imageBase64,
+                            timestamp = apiStory.timestamp,
+                            expiresAt = apiStory.expiresAt,
+                            viewedBy = apiStory.viewedBy,
+                            isCloseFreindsOnly = apiStory.isCloseFriendsOnly
+                        )
+                    }
+                    Resource.Success(stories)
+                } else {
+                    Resource.Error(body?.error ?: "Failed to fetch stories")
+                }
+            } else {
+                Resource.Error("Server error: ${response.code()}")
+            }
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "Network error")
+        }
+    }
+
+    suspend fun deleteStory(storyId: String, userId: String): Resource<Boolean> = withContext(Dispatchers.IO) {
+        try {
+            val request = DeleteStoryRequest(
+                storyId = storyId,
+                userId = userId
+            )
+
+            val response = apiService.deleteStory(request)
+
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null && body.success) {
+                    Resource.Success(true)
+                } else {
+                    Resource.Error(body?.error ?: "Failed to delete story")
+                }
+            } else {
+                Resource.Error("Server error: ${response.code()}")
+            }
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "Network error")
+        }
+    }
 }
 

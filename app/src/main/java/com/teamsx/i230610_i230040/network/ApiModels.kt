@@ -178,6 +178,26 @@ data class MarkStoryViewedRequest(
     @SerializedName("viewer_id") val viewerId: String
 )
 
+data class GetUserStoriesRequest(
+    @SerializedName("user_id") val userId: String,
+    @SerializedName("viewer_id") val viewerId: String? = null
+)
+
+data class GetUserStoriesResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("data") val data: UserStoriesDataWrapper? = null,
+    @SerializedName("error") val error: String? = null
+)
+
+data class UserStoriesDataWrapper(
+    @SerializedName("stories") val stories: List<ApiStory>
+)
+
+data class DeleteStoryRequest(
+    @SerializedName("story_id") val storyId: String,
+    @SerializedName("user_id") val userId: String
+)
+
 data class BaseResponse(
     @SerializedName("success") val success: Boolean,
     @SerializedName("data") val data: Map<String, Any>? = null,

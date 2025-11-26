@@ -35,8 +35,14 @@ interface ApiService {
     @POST("stories/get_feed.php")
     suspend fun getFeedStories(@Body request: GetFeedRequest): Response<GetFeedStoriesResponse>
 
+    @POST("stories/get_user_stories.php")
+    suspend fun getUserStories(@Body request: GetUserStoriesRequest): Response<GetUserStoriesResponse>
+
     @POST("stories/mark_viewed.php")
     suspend fun markStoryViewed(@Body request: MarkStoryViewedRequest): Response<BaseResponse>
+
+    @POST("stories/delete.php")
+    suspend fun deleteStory(@Body request: DeleteStoryRequest): Response<BaseResponse>
 
     @POST("stories/cleanup_expired.php")
     suspend fun cleanupExpiredStories(): Response<BaseResponse>

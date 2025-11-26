@@ -15,14 +15,16 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.imageview.ShapeableImageView
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.*
+import com.teamsx.i230610_i230040.network.Resource
+import com.teamsx.i230610_i230040.utils.UserPreferences
+import com.teamsx.i230610_i230040.viewmodels.StoryViewModel
 
 class socialhomescreen14 : AppCompatActivity() {
 
-    private val auth by lazy { FirebaseAuth.getInstance() }
-    private val db by lazy { FirebaseDatabase.getInstance().reference }
+    private val userPreferences by lazy { UserPreferences(this) }
+    private lateinit var storyViewModel: StoryViewModel
 
     private lateinit var storyImage: ImageView
     private lateinit var userProfileImage: ShapeableImageView
@@ -48,8 +50,11 @@ class socialhomescreen14 : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_socialhomescreen14)
 
+        storyViewModel = ViewModelProvider(this)[StoryViewModel::class.java]
+
         initViews()
         setupClickListeners()
+        observeViewModel()
         loadMyStories()
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -57,6 +62,69 @@ class socialhomescreen14 : AppCompatActivity() {
                 goBackToHome()
             }
         })
+    }
+
+    private fun observeViewModel() {
+        storyViewModel.userStoriesState.observe(this) { resource ->
+            when (resource) {
+                is Resource.Success<*> -> {
+                    @Suppress("UNCHECKED_CAST")
+                    val stories = resource.data as? List<Story> ?: emptyList()
+                    myStories.clear()
+                    myStories.addAll(stories.filter { it.isValid() })
+
+                    if (myStories.isEmpty()) {
+                        Toast.makeText(this, "You have no active stories", Toast.LENGTH_SHORT).show()
+                        goBackToHome()
+                        return@observe
+                    }
+
+                    myStories.sortBy { it.timestamp }
+                    loadUserProfile()
+                }
+                is Resource.Error<*> -> {
+                    Toast.makeText(this, "Failed to load stories: ${resource.message}", Toast.LENGTH_SHORT).show()
+                    finish()
+                }
+                is Resource.Loading<*> -> {
+                    // Show loading if needed
+                }
+                null -> {}
+            }
+        }
+
+        storyViewModel.deleteStoryState.observe(this) { resource ->
+            when (resource) {
+                is Resource.Success<*> -> {
+                    Toast.makeText(this, "Story deleted", Toast.LENGTH_SHORT).show()
+
+                    // Remove from local list
+                    if (currentStoryIndex < myStories.size) {
+                        myStories.removeAt(currentStoryIndex)
+                    }
+
+                    if (myStories.isEmpty()) {
+                        goBackToHome()
+                    } else {
+                        if (currentStoryIndex >= myStories.size) {
+                            currentStoryIndex = myStories.size - 1
+                        }
+                        displayStory()
+                    }
+
+                    storyViewModel.clearDeleteStoryState()
+                }
+                is Resource.Error<*> -> {
+                    Toast.makeText(this, "Failed to delete story: ${resource.message}", Toast.LENGTH_SHORT).show()
+                    startAutoProgress()
+                    storyViewModel.clearDeleteStoryState()
+                }
+                is Resource.Loading<*> -> {
+                    // Show loading if needed
+                }
+                null -> {}
+            }
+        }
     }
 
     private fun initViews() {
@@ -90,74 +158,36 @@ class socialhomescreen14 : AppCompatActivity() {
     }
 
     private fun loadMyStories() {
-        val currentUserId = auth.currentUser?.uid ?: return
+        val currentUser = userPreferences.getUser()
+        if (currentUser == null) {
+            Toast.makeText(this, "Please log in", Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
 
-        db.child("stories").child(currentUserId)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    myStories.clear()
-
-                    for (storySnap in snapshot.children) {
-                        val story = storySnap.getValue(Story::class.java)
-                        if (story != null && story.isValid()) {
-                            myStories.add(story)
-                        }
-                    }
-
-                    if (myStories.isEmpty()) {
-                        Toast.makeText(
-                            this@socialhomescreen14,
-                            "You have no active stories",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        goBackToHome()
-                        return
-                    }
-
-                    // Sort by timestamp
-                    myStories.sortBy { it.timestamp }
-
-                    // Load user profile and display first story
-                    loadUserProfile(currentUserId)
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    Toast.makeText(
-                        this@socialhomescreen14,
-                        "Failed to load stories",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    finish()
-                }
-            })
+        storyViewModel.getUserStories(currentUser.uid, currentUser.uid)
     }
 
-    private fun loadUserProfile(userId: String) {
-        db.child("users").child(userId).get()
-            .addOnSuccessListener { snapshot ->
-                val userProfile = snapshot.getValue(UserProfile::class.java)
+    private fun loadUserProfile() {
+        val currentUser = userPreferences.getUser() ?: return
 
-                usernameText.text = "Your Story"
+        usernameText.text = "Your Story"
 
-                // Load profile image
-                val photoBase64 = userProfile?.photoBase64
-                if (!photoBase64.isNullOrEmpty()) {
-                    try {
-                        val bytes = Base64.decode(photoBase64, Base64.DEFAULT)
-                        val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                        userProfileImage.setImageBitmap(bitmap)
-                    } catch (e: Exception) {
-                        userProfileImage.setImageResource(R.drawable.profile_login_splash_small)
-                    }
-                } else {
-                    userProfileImage.setImageResource(R.drawable.profile_login_splash_small)
-                }
-
-                displayStory()
+        // Load profile image
+        val photoBase64 = currentUser.profileImageUrl
+        if (!photoBase64.isNullOrEmpty()) {
+            try {
+                val bytes = Base64.decode(photoBase64, Base64.DEFAULT)
+                val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                userProfileImage.setImageBitmap(bitmap)
+            } catch (e: Exception) {
+                userProfileImage.setImageResource(R.drawable.profile_login_splash_small)
             }
-            .addOnFailureListener {
-                displayStory()
-            }
+        } else {
+            userProfileImage.setImageResource(R.drawable.profile_login_splash_small)
+        }
+
+        displayStory()
     }
 
     private fun displayStory() {
@@ -269,34 +299,11 @@ class socialhomescreen14 : AppCompatActivity() {
     }
 
     private fun deleteCurrentStory() {
-        val currentUserId = auth.currentUser?.uid ?: return
+        val currentUser = userPreferences.getUser() ?: return
+        if (currentStoryIndex >= myStories.size) return
+
         val currentStory = myStories[currentStoryIndex]
-
-        db.child("stories")
-            .child(currentUserId)
-            .child(currentStory.storyId)
-            .removeValue()
-            .addOnSuccessListener {
-                Toast.makeText(this, "Story deleted", Toast.LENGTH_SHORT).show()
-
-                // Remove from local list
-                myStories.removeAt(currentStoryIndex)
-
-                if (myStories.isEmpty()) {
-                    // No more stories
-                    goBackToHome()
-                } else {
-                    // Adjust index and display next story
-                    if (currentStoryIndex >= myStories.size) {
-                        currentStoryIndex = myStories.size - 1
-                    }
-                    displayStory()
-                }
-            }
-            .addOnFailureListener { e ->
-                Toast.makeText(this, "Failed to delete story: ${e.message}", Toast.LENGTH_SHORT).show()
-                startAutoProgress()
-            }
+        storyViewModel.deleteStory(currentStory.storyId, currentUser.uid)
     }
 
     private fun getTimeAgo(timestamp: Long): String {
