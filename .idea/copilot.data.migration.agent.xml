@@ -75,6 +75,16 @@
               <option value="944a1f01-b92c-4b27-97a4-0140683162aa" />
               <option value="b718fd48-a03a-4aa4-8e46-2ff066f005b8" />
               <option value="70861d4e-d72b-41f3-9e14-c0694c6200f6" />
+              <option value="0907c7cb-b766-4d15-821a-a27f662980fc" />
+              <option value="3c4d48c8-d6ea-4c8e-ab4b-bd77038842bc" />
+              <option value="ed32a5a4-f31d-4e98-ac5a-fba87915becd" />
+              <option value="02dd0888-0186-4684-9a1d-4e1af4af51db" />
+              <option value="050a0944-c070-4c0a-b984-9ddef9c72d65" />
+              <option value="34e1dd60-cd3f-4055-a437-c569e522dfe2" />
+              <option value="4b0d13c9-80c5-49bb-90c0-846c32f5484a" />
+              <option value="4789f5b2-9889-4368-9452-aa6e269c14b6" />
+              <option value="d2759b61-db82-4e47-8fb9-f630075354ea" />
+              <option value="6d081d7c-67d6-4e1a-a828-7f636800f796" />
             </set>
           </value>
         </entry>
@@ -230,6 +240,16 @@
         <set>
           <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/network/ApiModels.kt" />
           <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/socialhomescreenchat.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/services/MyFirebaseMessagingService.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/HomeActivity.kt" />
+          <option value="file://$PROJECT_DIR$/PUSH_NOTIFICATIONS_MESSAGES_GUIDE.md" />
+          <option value="file://$PROJECT_DIR$/CORRECTED_send_message.php" />
+          <option value="file://$PROJECT_DIR$/DATABASE_DIAGNOSTIC.sql" />
+          <option value="file://$PROJECT_DIR$/DEBUGGING_GUIDE.md" />
+          <option value="file://$PROJECT_DIR$/QUICK_FIX.md" />
+          <option value="file://$PROJECT_DIR$/README_NOTIFICATION_FIX.md" />
+          <option value="file://$PROJECT_DIR$/FIXED_send_message.php" />
+          <option value="file://$PROJECT_DIR$/BUG_FIX_SUMMARY.md" />
         </set>
       </entry>
       <entry key="acfaa2ff-5a8f-4f23-a7b7-94adbf476964" />
