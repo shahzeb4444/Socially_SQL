@@ -64,6 +64,11 @@ class socialhomescreenchat : AppCompatActivity() {
     private val pollInterval = 2000L // Poll every 2 seconds
     private var isPolling = false
 
+    // Status polling
+    private val statusPollHandler = Handler(Looper.getMainLooper())
+    private val statusPollInterval = 5000L // Poll status every 5 seconds
+    private var isStatusPolling = false
+
     private companion object {
         private const val STATUS_ONLINE_LABEL = "Online"
         private const val STATUS_OFFLINE_LABEL = "Offline"
@@ -227,6 +232,7 @@ class socialhomescreenchat : AppCompatActivity() {
         // Load initial messages and start polling
         loadInitialMessages()
         startMessagePolling()
+        startStatusPolling()
     }
 
     // Update user online status via API
@@ -400,6 +406,8 @@ class socialhomescreenchat : AppCompatActivity() {
         super.onDestroy()
         isPolling = false
         pollHandler.removeCallbacksAndMessages(null)
+        isStatusPolling = false
+        statusPollHandler.removeCallbacksAndMessages(null)
         updateOnlineStatus(false)
         screenshotDetector?.stopDetection()
 
@@ -433,6 +441,91 @@ class socialhomescreenchat : AppCompatActivity() {
             } catch (e: Exception) {
                 Log.e("socialhomescreenchat", "Error triggering vanish", e)
             }
+        }
+    }
+
+    // Start polling for other user's online status
+    private fun startStatusPolling() {
+        if (isStatusPolling || otherUserId.isEmpty()) return
+        isStatusPolling = true
+
+        // Initial check
+        checkUserStatus()
+        updateOwnHeartbeat()
+
+        // Poll every 5 seconds
+        statusPollHandler.postDelayed(object : Runnable {
+            override fun run() {
+                checkUserStatus()
+                updateOwnHeartbeat() // Update own last_seen as heartbeat
+                if (isStatusPolling) {
+                    statusPollHandler.postDelayed(this, statusPollInterval)
+                }
+            }
+        }, statusPollInterval)
+    }
+
+    // Update own last_seen timestamp as heartbeat
+    private fun updateOwnHeartbeat() {
+        lifecycleScope.launch {
+            try {
+                val request = UpdateStatusRequest(currentUserId, true)
+                RetrofitInstance.apiService.updateStatus(request)
+            } catch (e: Exception) {
+                Log.e("socialhomescreenchat", "Error updating heartbeat", e)
+            }
+        }
+    }
+
+    // Check if other user is online
+    private fun checkUserStatus() {
+        if (otherUserId.isEmpty()) return
+
+        lifecycleScope.launch {
+            try {
+                val request = GetUserStatusRequest(otherUserId)
+                val response = RetrofitInstance.apiService.getUserStatus(request)
+
+                if (response.isSuccessful && response.body()?.success == true) {
+                    val statusData = response.body()?.data
+                    if (statusData != null) {
+                        updateStatusUI(statusData.isOnline, statusData.lastSeen)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("socialhomescreenchat", "Error checking user status", e)
+            }
+        }
+    }
+
+    // Update the status UI (Online/Offline)
+    private fun updateStatusUI(isOnline: Boolean, lastSeen: Long) {
+        runOnUiThread {
+            if (isOnline) {
+                onlineStatusText.text = "Online"
+                onlineStatusText.setTextColor(Color.parseColor("#4CAF50")) // Green
+            } else {
+                // Calculate time ago
+                val timeAgo = getTimeAgo(lastSeen)
+                onlineStatusText.text = if (timeAgo.isNotEmpty()) "Last seen $timeAgo" else "Offline"
+                onlineStatusText.setTextColor(Color.parseColor("#9E9E9E")) // Gray
+            }
+        }
+    }
+
+    // Get human-readable time ago
+    private fun getTimeAgo(timestamp: Long): String {
+        if (timestamp == 0L) return ""
+
+        val now = System.currentTimeMillis()
+        val diff = now - timestamp
+
+        return when {
+            diff < 60000 -> "just now" // Less than 1 minute
+            diff < 3600000 -> "${diff / 60000}m ago" // Less than 1 hour
+            diff < 86400000 -> "${diff / 3600000}h ago" // Less than 1 day
+            diff < 604800000 -> "${diff / 86400000}d ago" // Less than 1 week
+            else -> "a while ago"
         }
     }
 
