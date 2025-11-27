@@ -30,6 +30,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.teamsx.i230610_i230040.utils.UserPreferences
 import com.teamsx.i230610_i230040.network.*
 import kotlinx.coroutines.launch
+import com.teamsx.i230610_i230040.repository.MessageRepository
+import com.teamsx.i230610_i230040.utils.NetworkMonitor
+import com.teamsx.i230610_i230040.database.entity.MessageEntity
 import java.util.Locale
 
 class socialhomescreenchat : AppCompatActivity() {
@@ -47,6 +50,8 @@ class socialhomescreenchat : AppCompatActivity() {
     private val messagesList = mutableListOf<Message>()
 
     private val userPreferences by lazy { UserPreferences(this) }
+    private lateinit var messageRepository: MessageRepository
+    private lateinit var networkMonitor: NetworkMonitor
 
     private lateinit var chatId: String
     private lateinit var otherUserName: String
@@ -149,6 +154,10 @@ class socialhomescreenchat : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Initialize offline support components
+        messageRepository = MessageRepository(this)
+        networkMonitor = NetworkMonitor(this)
+
         val incomingChatId = intent.getStringExtra("chatId")
         val incomingUserName = intent.getStringExtra("otherUserName")
         val incomingOtherUserId = intent.getStringExtra("otherUserId")
@@ -233,6 +242,69 @@ class socialhomescreenchat : AppCompatActivity() {
         loadInitialMessages()
         startMessagePolling()
         startStatusPolling()
+        observeNetworkChanges()
+        observeMessagesFromDatabase()
+    }
+
+    // Observe network state changes
+    private fun observeNetworkChanges() {
+        networkMonitor.observe(this) { isOnline ->
+            Log.d("socialhomescreenchat", "Network state: ${if (isOnline) "ONLINE" else "OFFLINE"}")
+            if (isOnline) {
+                // Sync messages when coming back online
+                syncMessagesWithServer()
+            }
+        }
+    }
+
+    // Observe messages from local database (auto-updates UI)
+    private fun observeMessagesFromDatabase() {
+        messageRepository.getMessagesForChat(chatId).observe(this) { entities ->
+            // Convert entities to UI messages
+            messagesList.clear()
+            entities.forEach { entity ->
+                // Skip messages that have vanished for this user
+                val vanishedForUsers = entity.vanishedFor.split(",").map { it.trim() }
+                if (!vanishedForUsers.contains(currentUserId)) {
+                    val msg = Message(
+                        messageId = entity.messageId,
+                        senderId = entity.senderId,
+                        senderUsername = entity.senderUsername,
+                        text = entity.text,
+                        timestamp = entity.timestamp,
+                        isEdited = entity.isEdited,
+                        isDeleted = entity.isDeleted,
+                        deletedAt = entity.deletedAt,
+                        mediaType = entity.mediaType,
+                        mediaUrl = entity.mediaUrl,
+                        mediaCaption = entity.mediaCaption,
+                        isVanishMode = entity.isVanishMode,
+                        viewedBy = entity.viewedBy,
+                        vanishedFor = entity.vanishedFor
+                    )
+                    messagesList.add(msg)
+                    if (msg.timestamp > lastMessageTimestamp) {
+                        lastMessageTimestamp = msg.timestamp
+                    }
+                }
+            }
+
+            messageAdapter.notifyDataSetChanged()
+            if (messagesList.isNotEmpty()) {
+                recyclerView.scrollToPosition(messagesList.size - 1)
+            }
+        }
+    }
+
+    // Sync messages with server (fetch and update local database)
+    private fun syncMessagesWithServer() {
+        lifecycleScope.launch {
+            try {
+                messageRepository.fetchMessagesFromServer(chatId, currentUserId)
+            } catch (e: Exception) {
+                Log.e("socialhomescreenchat", "Error syncing messages", e)
+            }
+        }
     }
 
     // Update user online status via API
@@ -247,57 +319,18 @@ class socialhomescreenchat : AppCompatActivity() {
         }
     }
 
-    // Load initial messages
+    // Load initial messages - now uses repository for offline support
     private fun loadInitialMessages() {
         lifecycleScope.launch {
             try {
-                val request = GetMessagesRequest(chatId, limit = 50, viewerId = currentUserId)
-                val response = RetrofitInstance.apiService.getMessages(request)
+                // Fetch from server and update local database
+                messageRepository.fetchMessagesFromServer(chatId, currentUserId)
 
-                if (response.isSuccessful && response.body()?.success == true) {
-                    val apiMessages = response.body()?.data?.messages ?: emptyList()
-
-                    messagesList.clear()
-                    apiMessages.forEach { apiMsg ->
-                        // Skip messages that have vanished for this user
-                        val vanishedForUsers = apiMsg.vanishedFor.split(",").map { it.trim() }
-                        if (vanishedForUsers.contains(currentUserId)) {
-                            return@forEach // Skip this message
-                        }
-
-                        val msg = Message(
-                            messageId = apiMsg.messageId,
-                            senderId = apiMsg.senderId,
-                            senderUsername = apiMsg.senderUsername,
-                            text = apiMsg.text,
-                            timestamp = apiMsg.timestamp,
-                            isEdited = apiMsg.isEdited,
-                            isDeleted = apiMsg.isDeleted,
-                            deletedAt = apiMsg.deletedAt,
-                            mediaType = apiMsg.mediaType,
-                            mediaUrl = apiMsg.mediaUrl,
-                            mediaCaption = apiMsg.mediaCaption,
-                            isVanishMode = apiMsg.isVanishMode,
-                            viewedBy = apiMsg.viewedBy,
-                            vanishedFor = apiMsg.vanishedFor
-                        )
-                        messagesList.add(msg)
-                        if (msg.timestamp > lastMessageTimestamp) {
-                            lastMessageTimestamp = msg.timestamp
-                        }
-                    }
-
-                    messageAdapter.notifyDataSetChanged()
-                    if (messagesList.isNotEmpty()) {
-                        recyclerView.scrollToPosition(messagesList.size - 1)
-                    }
-
-                    // Mark messages as viewed when loading
-                    markMessagesAsViewed()
-                }
+                // Mark messages as viewed when loading
+                markMessagesAsViewed()
             } catch (e: Exception) {
                 Log.e("socialhomescreenchat", "Error loading messages", e)
-                Toast.makeText(this@socialhomescreenchat, "Error loading messages", Toast.LENGTH_SHORT).show()
+                // Messages will still load from local database via LiveData observer
             }
         }
     }
@@ -674,7 +707,8 @@ class socialhomescreenchat : AppCompatActivity() {
     private fun sendMessage(text: String, vanishMode: Boolean = false) {
         lifecycleScope.launch {
             try {
-                val request = SendMessageRequest(
+                // Use repository for offline-first sending
+                messageRepository.sendMessage(
                     chatId = chatId,
                     senderId = currentUserId,
                     senderUsername = currentUsername,
@@ -682,17 +716,12 @@ class socialhomescreenchat : AppCompatActivity() {
                     isVanishMode = vanishMode
                 )
 
-                val response = RetrofitInstance.apiService.sendMessage(request)
-
-                if (response.isSuccessful && response.body()?.success == true) {
-                    // Message sent successfully - polling will fetch it
-                    if (vanishMode) {
-                        Toast.makeText(this@socialhomescreenchat, "Sent in vanish mode 👻", Toast.LENGTH_SHORT).show()
-                    }
-                } else {
-                    val errorMsg = response.body()?.error ?: "Failed to send message"
-                    Toast.makeText(this@socialhomescreenchat, errorMsg, Toast.LENGTH_SHORT).show()
+                // Message saved locally and queued for sync
+                if (vanishMode) {
+                    Toast.makeText(this@socialhomescreenchat, "Sent in vanish mode 👻", Toast.LENGTH_SHORT).show()
                 }
+
+                // UI will update automatically via LiveData observer
             } catch (e: Exception) {
                 Log.e("socialhomescreenchat", "Error sending message", e)
                 Toast.makeText(this@socialhomescreenchat, "Error: ${e.message}", Toast.LENGTH_LONG).show()
@@ -703,7 +732,8 @@ class socialhomescreenchat : AppCompatActivity() {
     private fun sendMediaMessage(mediaType: String, mediaUrl: String, caption: String, vanishMode: Boolean = false) {
         lifecycleScope.launch {
             try {
-                val request = SendMessageRequest(
+                // Use repository for offline-first media sending
+                messageRepository.sendMessage(
                     chatId = chatId,
                     senderId = currentUserId,
                     senderUsername = currentUsername,
@@ -714,14 +744,10 @@ class socialhomescreenchat : AppCompatActivity() {
                     isVanishMode = vanishMode
                 )
 
-                val response = RetrofitInstance.apiService.sendMessage(request)
+                Toast.makeText(this@socialhomescreenchat, if (vanishMode) "Image sent in vanish mode 👻" else "Image sent", Toast.LENGTH_SHORT).show()
+                messageInput.text.clear()
 
-                if (response.isSuccessful && response.body()?.success == true) {
-                    Toast.makeText(this@socialhomescreenchat, if (vanishMode) "Image sent in vanish mode 👻" else "Image sent", Toast.LENGTH_SHORT).show()
-                    messageInput.text.clear()
-                } else {
-                    Toast.makeText(this@socialhomescreenchat, "Failed to send image", Toast.LENGTH_SHORT).show()
-                }
+                // UI will update automatically via LiveData observer
             } catch (e: Exception) {
                 Log.e("socialhomescreenchat", "Error sending image", e)
                 Toast.makeText(this@socialhomescreenchat, "Error: ${e.message}", Toast.LENGTH_LONG).show()
@@ -761,20 +787,11 @@ class socialhomescreenchat : AppCompatActivity() {
                 if (newText.isNotEmpty() && newText != message.text) {
                     lifecycleScope.launch {
                         try {
-                            val request = EditMessageRequest(message.messageId, newText)
-                            val response = RetrofitInstance.apiService.editMessage(request)
+                            // Use repository for offline-first editing
+                            messageRepository.editMessage(message.messageId, newText)
+                            Toast.makeText(this@socialhomescreenchat, "Message edited", Toast.LENGTH_SHORT).show()
 
-                            if (response.isSuccessful && response.body()?.success == true) {
-                                Toast.makeText(this@socialhomescreenchat, "Message edited", Toast.LENGTH_SHORT).show()
-                                // Update local message
-                                val idx = messagesList.indexOfFirst { it.messageId == message.messageId }
-                                if (idx != -1) {
-                                    messagesList[idx] = message.copy(text = newText, isEdited = true)
-                                    messageAdapter.notifyItemChanged(idx)
-                                }
-                            } else {
-                                Toast.makeText(this@socialhomescreenchat, "Failed to edit message", Toast.LENGTH_SHORT).show()
-                            }
+                            // UI will update automatically via LiveData observer
                         } catch (e: Exception) {
                             Log.e("socialhomescreenchat", "Error editing message", e)
                             Toast.makeText(this@socialhomescreenchat, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -789,24 +806,11 @@ class socialhomescreenchat : AppCompatActivity() {
     private fun deleteMessage(message: Message) {
         lifecycleScope.launch {
             try {
-                val request = DeleteMessageRequest(message.messageId)
-                val response = RetrofitInstance.apiService.deleteMessage(request)
+                // Use repository for offline-first deletion
+                messageRepository.deleteMessage(message.messageId)
+                Toast.makeText(this@socialhomescreenchat, "Message deleted", Toast.LENGTH_SHORT).show()
 
-                if (response.isSuccessful && response.body()?.success == true) {
-                    Toast.makeText(this@socialhomescreenchat, "Message deleted", Toast.LENGTH_SHORT).show()
-                    // Update local message
-                    val idx = messagesList.indexOfFirst { it.messageId == message.messageId }
-                    if (idx != -1) {
-                        messagesList[idx] = message.copy(
-                            isDeleted = true,
-                            text = "[This message was deleted]",
-                            deletedAt = System.currentTimeMillis()
-                        )
-                        messageAdapter.notifyItemChanged(idx)
-                    }
-                } else {
-                    Toast.makeText(this@socialhomescreenchat, "Failed to delete message", Toast.LENGTH_SHORT).show()
-                }
+                // UI will update automatically via LiveData observer
             } catch (e: Exception) {
                 Log.e("socialhomescreenchat", "Error deleting message", e)
                 Toast.makeText(this@socialhomescreenchat, "Error: ${e.message}", Toast.LENGTH_SHORT).show()

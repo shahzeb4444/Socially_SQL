@@ -17,12 +17,20 @@ import com.teamsx.i230610_i230040.network.Resource
 import com.teamsx.i230610_i230040.utils.UserPreferences
 import com.teamsx.i230610_i230040.viewmodels.PostViewModel
 import com.teamsx.i230610_i230040.viewmodels.StoryViewModel
+import com.teamsx.i230610_i230040.repository.PostRepository
+import com.teamsx.i230610_i230040.repository.StoryRepository
+import com.teamsx.i230610_i230040.utils.NetworkMonitor
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 
 class HomeFragment : Fragment() {
 
     private val userPreferences by lazy { UserPreferences(requireContext()) }
     private lateinit var postViewModel: PostViewModel
     private lateinit var storyViewModel: StoryViewModel
+    private lateinit var postRepository: PostRepository
+    private lateinit var storyRepository: StoryRepository
+    private lateinit var networkMonitor: NetworkMonitor
 
     private lateinit var storiesRecyclerView: RecyclerView
     private lateinit var postsRecyclerView: RecyclerView
@@ -32,12 +40,18 @@ class HomeFragment : Fragment() {
     private val storyGroups = mutableListOf<StoryGroup>()
     private val posts = mutableListOf<Post>()
 
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View = inflater.inflate(R.layout.fragment_home, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Initialize offline support
+        postRepository = PostRepository(requireContext())
+        storyRepository = StoryRepository(requireContext())
+        networkMonitor = NetworkMonitor(requireContext())
 
         postViewModel = ViewModelProvider(this)[PostViewModel::class.java]
         storyViewModel = ViewModelProvider(this)[StoryViewModel::class.java]
@@ -46,6 +60,7 @@ class HomeFragment : Fragment() {
         setupStoriesRecyclerView(view)
         setupPostsRecyclerView(view)
         observeViewModels()
+        observeOfflineData()
 
         loadStories()
         loadPosts()
@@ -196,18 +211,53 @@ class HomeFragment : Fragment() {
     private fun loadStories() {
         val currentUserId = getCurrentUserId() ?: return
         Log.d("HomeFragment", "Loading stories for user: $currentUserId")
+
+        // Load from server and cache using repository
+        lifecycleScope.launch {
+            try {
+                storyRepository.fetchStoriesFromServer(currentUserId)
+            } catch (e: Exception) {
+                Log.e("HomeFragment", "Error fetching stories", e)
+                // Stories will still load from cache via LiveData observer
+            }
+        }
+
+        // Also load via ViewModel (for compatibility)
         storyViewModel.getFeedStories(currentUserId)
     }
 
     private fun loadPosts() {
         val currentUserId = getCurrentUserId() ?: return
         Log.d("HomeFragment", "Loading posts for user: $currentUserId")
+
+        // Load from server and cache using repository
+        lifecycleScope.launch {
+            try {
+                postRepository.fetchFeedFromServer(currentUserId)
+            } catch (e: Exception) {
+                Log.e("HomeFragment", "Error fetching posts", e)
+                // Posts will still load from cache via LiveData observer
+            }
+        }
+
+        // Also load via ViewModel (for compatibility)
         postViewModel.getFeedPosts(currentUserId)
     }
 
 
     private fun toggleLike(post: Post) {
         val currentUserId = getCurrentUserId() ?: return
+
+        // Toggle like using repository (offline-first)
+        lifecycleScope.launch {
+            try {
+                postRepository.toggleLike(post.postId, currentUserId)
+            } catch (e: Exception) {
+                Log.e("HomeFragment", "Error toggling like", e)
+            }
+        }
+
+        // Also update via ViewModel (for compatibility)
         postViewModel.toggleLike(post.postId, currentUserId)
     }
 
@@ -241,6 +291,81 @@ class HomeFragment : Fragment() {
                 putExtra("start_index", 0)
             }
             startActivity(intent)
+        }
+    }
+
+    /**
+     * Observe offline data from local database (auto-updates UI)
+     */
+    private fun observeOfflineData() {
+        // Observe cached posts
+        postRepository.getAllPosts().observe(viewLifecycleOwner) { cachedPosts ->
+            if (cachedPosts.isNotEmpty()) {
+                Log.d("HomeFragment", "Loaded ${cachedPosts.size} posts from cache")
+                posts.clear()
+                posts.addAll(cachedPosts.map { entity ->
+                    Post(
+                        postId = entity.postId,
+                        userId = entity.userId,
+                        username = entity.username,
+                        userPhotoBase64 = entity.userProfileImage,
+                        location = entity.location,
+                        description = entity.description,
+                        images = entity.images.split(",").filter { it.isNotEmpty() },
+                        timestamp = entity.timestamp,
+                        likesCount = entity.likesCount,
+                        commentsCount = entity.commentsCount
+                    )
+                })
+                postsAdapter.notifyDataSetChanged()
+            }
+        }
+
+        // Observe cached stories
+        storyRepository.getActiveStories().observe(viewLifecycleOwner) { cachedStories ->
+            if (cachedStories.isNotEmpty()) {
+                Log.d("HomeFragment", "Loaded ${cachedStories.size} stories from cache")
+
+                // Group stories by user
+                val groupedStories = cachedStories.groupBy { it.userId }
+                storyGroups.clear()
+
+                val currentUserIdValue = getCurrentUserId() ?: ""
+
+                groupedStories.forEach { (userId, storiesForUser) ->
+                    val firstStory = storiesForUser.first()
+
+                    // Check if user has unviewed stories
+                    val hasUnviewed = storiesForUser.any { story ->
+                        val viewedByList = story.viewedBy.split(",").filter { it.isNotEmpty() }
+                        !viewedByList.contains(currentUserIdValue)
+                    }
+
+                    val storyGroup = StoryGroup(
+                        userId = userId,
+                        username = firstStory.username,
+                        userPhotoBase64 = firstStory.userPhotoBase64,
+                        stories = storiesForUser.map { entity ->
+                            Story(
+                                storyId = entity.storyId,
+                                userId = entity.userId,
+                                username = entity.username,
+                                userPhotoBase64 = entity.userPhotoBase64,
+                                imageBase64 = entity.imageBase64,
+                                timestamp = entity.timestamp,
+                                expiresAt = entity.expiresAt,
+                                viewedBy = entity.viewedBy.split(",")
+                                    .filter { it.isNotEmpty() }
+                                    .associateWith { true },
+                                isCloseFreindsOnly = entity.isCloseFriendsOnly
+                            )
+                        },
+                        hasUnviewedStories = hasUnviewed
+                    )
+                    storyGroups.add(storyGroup)
+                }
+                storiesAdapter.notifyDataSetChanged()
+            }
         }
     }
 

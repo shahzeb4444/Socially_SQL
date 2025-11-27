@@ -13,8 +13,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.teamsx.i230610_i230040.utils.UserPreferences
-import com.teamsx.i230610_i230040.network.RetrofitInstance
-import com.teamsx.i230610_i230040.network.GetChatUsersRequest
+import com.teamsx.i230610_i230040.repository.UserRepository
+import com.teamsx.i230610_i230040.utils.NetworkMonitor
 import kotlinx.coroutines.launch
 
 class socialhomescreen4 : AppCompatActivity() {
@@ -22,6 +22,8 @@ class socialhomescreen4 : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var searchField: EditText
     private val userPreferences by lazy { UserPreferences(this) }
+    private lateinit var userRepository: UserRepository
+    private lateinit var networkMonitor: NetworkMonitor
     private val usersList = mutableListOf<Pair<String, UserProfile>>() // Pair<uid, UserProfile>
     private val allUsers = mutableListOf<Pair<String, UserProfile>>() // All users for search filtering
 
@@ -32,6 +34,9 @@ class socialhomescreen4 : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_socialhomescreen4)
 
+        // Initialize offline support
+        userRepository = UserRepository(this)
+        networkMonitor = NetworkMonitor(this)
 
         recyclerView = findViewById(R.id.userRecyclerView)
         searchField = findViewById(R.id.searchField)
@@ -83,57 +88,69 @@ class socialhomescreen4 : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                val request = GetChatUsersRequest(currentUserId)
-                Log.d("socialhomescreen4", "Loading chat users for: $currentUserId")
-                Log.d("socialhomescreen4", "Request: $request")
-
-                val response = RetrofitInstance.apiService.getChatUsers(request)
-
-                Log.d("socialhomescreen4", "Response code: ${response.code()}")
-                Log.d("socialhomescreen4", "Response successful: ${response.isSuccessful}")
-                Log.d("socialhomescreen4", "Response body: ${response.body()}")
-                Log.d("socialhomescreen4", "Error body: ${response.errorBody()?.string()}")
-
-                if (response.isSuccessful && response.body()?.success == true) {
-                    val apiUsers = response.body()?.data?.users ?: emptyList()
-
-                    Log.d("socialhomescreen4", "Loaded ${apiUsers.size} chat users")
-
-                    usersList.clear()
-                    allUsers.clear()
-
-                    // Convert API users to UserProfile pairs
-                    apiUsers.forEach { apiUser ->
-                        Log.d("socialhomescreen4", "Processing user: ${apiUser.username}")
-                        val profile = UserProfile(
-                            username = apiUser.username,
-                            firstName = apiUser.fullName ?: "",
-                            photoBase64 = apiUser.profileImageUrl
-                        )
-                        usersList.add(Pair(apiUser.uid, profile))
-                    }
-
-                    // Sort users alphabetically by username
-                    val sortedUsers = usersList.sortedBy { it.second.username.lowercase() }
-                    allUsers.addAll(sortedUsers)
-
-                    Log.d("socialhomescreen4", "Updating RecyclerView with ${allUsers.size} users")
-                    updateRecyclerView(allUsers)
-
-                    if (allUsers.isEmpty()) {
-                        Toast.makeText(this@socialhomescreen4, "No mutual followers found. Follow users and have them follow you back to chat.", Toast.LENGTH_LONG).show()
-                    }
-                } else {
-                    val errorMsg = response.body()?.error ?: response.errorBody()?.string() ?: "Failed to load users (HTTP ${response.code()})"
-                    Log.e("socialhomescreen4", "Error: $errorMsg")
-                    Toast.makeText(this@socialhomescreen4, "Error: $errorMsg", Toast.LENGTH_LONG).show()
+                // First, load from cache immediately (offline-first)
+                val cachedUsers = userRepository.getAllUsers()
+                if (cachedUsers.isNotEmpty()) {
+                    Log.d("socialhomescreen4", "Loaded ${cachedUsers.size} users from cache")
+                    displayUsers(cachedUsers.map { user ->
+                        Pair(user.uid, UserProfile(
+                            username = user.username,
+                            firstName = user.fullName,
+                            photoBase64 = user.profileImageUrl
+                        ))
+                    })
                 }
+
+                // Then fetch fresh data from server and update cache
+                val freshUsers = userRepository.fetchChatUsersFromServer(currentUserId)
+
+                if (freshUsers.isNotEmpty()) {
+                    Log.d("socialhomescreen4", "Loaded ${freshUsers.size} users from server")
+                    displayUsers(freshUsers.map { user ->
+                        Pair(user.uid, UserProfile(
+                            username = user.username,
+                            firstName = user.fullName,
+                            photoBase64 = user.profileImageUrl
+                        ))
+                    })
+                } else if (cachedUsers.isEmpty()) {
+                    Toast.makeText(this@socialhomescreen4, "No mutual followers found. Follow users and have them follow you back to chat.", Toast.LENGTH_LONG).show()
+                }
+
             } catch (e: Exception) {
                 Log.e("socialhomescreen4", "Exception loading users", e)
-                e.printStackTrace()
-                Toast.makeText(this@socialhomescreen4, "Network error: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+
+                // Try to load from cache on error
+                val cachedUsers = userRepository.getAllUsers()
+                if (cachedUsers.isNotEmpty()) {
+                    Log.d("socialhomescreen4", "Loaded ${cachedUsers.size} users from cache after error")
+                    displayUsers(cachedUsers.map { user ->
+                        Pair(user.uid, UserProfile(
+                            username = user.username,
+                            firstName = user.fullName,
+                            photoBase64 = user.profileImageUrl
+                        ))
+                    })
+                    Toast.makeText(this@socialhomescreen4, "Offline mode: Showing cached users", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this@socialhomescreen4, "Network error: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                }
             }
         }
+    }
+
+    private fun displayUsers(users: List<Pair<String, UserProfile>>) {
+        usersList.clear()
+        allUsers.clear()
+
+        usersList.addAll(users)
+
+        // Sort users alphabetically by username
+        val sortedUsers = usersList.sortedBy { it.second.username.lowercase() }
+        allUsers.addAll(sortedUsers)
+
+        Log.d("socialhomescreen4", "Displaying ${allUsers.size} users")
+        updateRecyclerView(allUsers)
     }
 
     private fun updateRecyclerView(users: List<Pair<String, UserProfile>>) {
