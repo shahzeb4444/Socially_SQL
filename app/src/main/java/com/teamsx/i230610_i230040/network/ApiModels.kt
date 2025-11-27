@@ -496,7 +496,8 @@ data class ApiChatUser(
 data class GetMessagesRequest(
     @SerializedName("chat_id") val chatId: String,
     @SerializedName("limit") val limit: Int = 50,
-    @SerializedName("before_timestamp") val beforeTimestamp: Long = Long.MAX_VALUE
+    @SerializedName("before_timestamp") val beforeTimestamp: Long = Long.MAX_VALUE,
+    @SerializedName("viewer_id") val viewerId: String = ""
 )
 
 data class GetMessagesResponse(
@@ -521,7 +522,10 @@ data class ApiMessage(
     @SerializedName("deleted_at") val deletedAt: Long,
     @SerializedName("media_type") val mediaType: String,
     @SerializedName("media_url") val mediaUrl: String,
-    @SerializedName("media_caption") val mediaCaption: String
+    @SerializedName("media_caption") val mediaCaption: String,
+    @SerializedName("is_vanish_mode") val isVanishMode: Boolean = false,
+    @SerializedName("viewed_by") val viewedBy: String = "",
+    @SerializedName("vanished_for") val vanishedFor: String = ""
 )
 
 // Send message
@@ -533,7 +537,8 @@ data class SendMessageRequest(
     @SerializedName("text") val text: String = "",
     @SerializedName("media_type") val mediaType: String = "",
     @SerializedName("media_url") val mediaUrl: String = "",
-    @SerializedName("media_caption") val mediaCaption: String = ""
+    @SerializedName("media_caption") val mediaCaption: String = "",
+    @SerializedName("is_vanish_mode") val isVanishMode: Boolean = false
 )
 
 data class SendMessageResponse(
@@ -602,7 +607,8 @@ data class UpdateStatusDataWrapper(
 // Poll new messages
 data class PollNewMessagesRequest(
     @SerializedName("chat_id") val chatId: String,
-    @SerializedName("since_timestamp") val sinceTimestamp: Long
+    @SerializedName("since_timestamp") val sinceTimestamp: Long,
+    @SerializedName("viewer_id") val viewerId: String = ""
 )
 
 data class PollNewMessagesResponse(
@@ -615,4 +621,38 @@ data class PollMessagesDataWrapper(
     @SerializedName("messages") val messages: List<ApiMessage>,
     @SerializedName("count") val count: Int
 )
+
+// Vanishing mode - Mark messages as viewed
+data class MarkMessagesViewedRequest(
+    @SerializedName("chat_id") val chatId: String,
+    @SerializedName("viewer_id") val viewerId: String
+)
+
+data class MarkMessagesViewedResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("data") val data: MarkViewedDataWrapper? = null,
+    @SerializedName("error") val error: String? = null
+)
+
+data class MarkViewedDataWrapper(
+    @SerializedName("marked_count") val markedCount: Int
+)
+
+// Vanishing mode - Trigger vanish on chat exit
+data class TriggerVanishRequest(
+    @SerializedName("chat_id") val chatId: String,
+    @SerializedName("user_id") val userId: String
+)
+
+data class TriggerVanishResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("data") val data: TriggerVanishDataWrapper? = null,
+    @SerializedName("error") val error: String? = null
+)
+
+data class TriggerVanishDataWrapper(
+    @SerializedName("vanished_count") val vanishedCount: Int,
+    @SerializedName("message_ids") val messageIds: List<String>
+)
+
 

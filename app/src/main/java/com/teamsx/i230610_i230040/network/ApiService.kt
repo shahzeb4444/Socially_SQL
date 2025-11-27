@@ -114,4 +114,10 @@ interface ApiService {
 
     @POST("messages/poll_new_messages.php")
     suspend fun pollNewMessages(@Body request: PollNewMessagesRequest): Response<PollNewMessagesResponse>
+
+    @POST("messages/mark_viewed.php")
+    suspend fun markMessagesViewed(@Body request: MarkMessagesViewedRequest): Response<MarkMessagesViewedResponse>
+
+    @POST("messages/trigger_vanish.php")
+    suspend fun triggerVanish(@Body request: TriggerVanishRequest): Response<TriggerVanishResponse>
 }

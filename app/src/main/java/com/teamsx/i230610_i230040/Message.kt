@@ -17,7 +17,11 @@ data class Message(
     // New fields for features
     val senderOnlineStatus: Boolean = false,
     val isScreenshotTaken: Boolean = false,
-    val screenshotNotificationSent: Boolean = false
+    val screenshotNotificationSent: Boolean = false,
+    // Vanishing mode fields
+    val isVanishMode: Boolean = false,
+    val viewedBy: String = "", // comma-separated user IDs who viewed this message
+    val vanishedFor: String = "" // comma-separated user IDs for whom this message vanished
 )
 
 // 2. MEDIA MESSAGE DATA CLASS

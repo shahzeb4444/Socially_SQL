@@ -211,8 +211,7 @@ class socialhomescreenchat : AppCompatActivity() {
         sendButton.setOnClickListener {
             val messageText = messageInput.text.toString().trim()
             if (messageText.isNotEmpty()) {
-                sendMessage(messageText)
-                messageInput.text.clear()
+                showVanishModeDialog(messageText, isMedia = false)
             }
         }
 
@@ -246,7 +245,7 @@ class socialhomescreenchat : AppCompatActivity() {
     private fun loadInitialMessages() {
         lifecycleScope.launch {
             try {
-                val request = GetMessagesRequest(chatId, limit = 50)
+                val request = GetMessagesRequest(chatId, limit = 50, viewerId = currentUserId)
                 val response = RetrofitInstance.apiService.getMessages(request)
 
                 if (response.isSuccessful && response.body()?.success == true) {
@@ -254,6 +253,12 @@ class socialhomescreenchat : AppCompatActivity() {
 
                     messagesList.clear()
                     apiMessages.forEach { apiMsg ->
+                        // Skip messages that have vanished for this user
+                        val vanishedForUsers = apiMsg.vanishedFor.split(",").map { it.trim() }
+                        if (vanishedForUsers.contains(currentUserId)) {
+                            return@forEach // Skip this message
+                        }
+
                         val msg = Message(
                             messageId = apiMsg.messageId,
                             senderId = apiMsg.senderId,
@@ -265,7 +270,10 @@ class socialhomescreenchat : AppCompatActivity() {
                             deletedAt = apiMsg.deletedAt,
                             mediaType = apiMsg.mediaType,
                             mediaUrl = apiMsg.mediaUrl,
-                            mediaCaption = apiMsg.mediaCaption
+                            mediaCaption = apiMsg.mediaCaption,
+                            isVanishMode = apiMsg.isVanishMode,
+                            viewedBy = apiMsg.viewedBy,
+                            vanishedFor = apiMsg.vanishedFor
                         )
                         messagesList.add(msg)
                         if (msg.timestamp > lastMessageTimestamp) {
@@ -277,6 +285,9 @@ class socialhomescreenchat : AppCompatActivity() {
                     if (messagesList.isNotEmpty()) {
                         recyclerView.scrollToPosition(messagesList.size - 1)
                     }
+
+                    // Mark messages as viewed when loading
+                    markMessagesAsViewed()
                 }
             } catch (e: Exception) {
                 Log.e("socialhomescreenchat", "Error loading messages", e)
@@ -304,13 +315,25 @@ class socialhomescreenchat : AppCompatActivity() {
     private fun pollNewMessages() {
         lifecycleScope.launch {
             try {
-                val request = PollNewMessagesRequest(chatId, lastMessageTimestamp)
+                val request = PollNewMessagesRequest(chatId, lastMessageTimestamp, viewerId = currentUserId)
                 val response = RetrofitInstance.apiService.pollNewMessages(request)
 
                 if (response.isSuccessful && response.body()?.success == true) {
                     val newMessages = response.body()?.data?.messages ?: emptyList()
 
                     newMessages.forEach { apiMsg ->
+                        // Skip messages that have vanished for this user
+                        val vanishedForUsers = apiMsg.vanishedFor.split(",").map { it.trim() }
+                        if (vanishedForUsers.contains(currentUserId)) {
+                            // Remove from list if it exists
+                            val existingIndex = messagesList.indexOfFirst { it.messageId == apiMsg.messageId }
+                            if (existingIndex != -1) {
+                                messagesList.removeAt(existingIndex)
+                                messageAdapter.notifyItemRemoved(existingIndex)
+                            }
+                            return@forEach
+                        }
+
                         // Check if message already exists (in case of edit/delete)
                         val existingIndex = messagesList.indexOfFirst { it.messageId == apiMsg.messageId }
 
@@ -327,7 +350,10 @@ class socialhomescreenchat : AppCompatActivity() {
                                 deletedAt = apiMsg.deletedAt,
                                 mediaType = apiMsg.mediaType,
                                 mediaUrl = apiMsg.mediaUrl,
-                                mediaCaption = apiMsg.mediaCaption
+                                mediaCaption = apiMsg.mediaCaption,
+                                isVanishMode = apiMsg.isVanishMode,
+                                viewedBy = apiMsg.viewedBy,
+                                vanishedFor = apiMsg.vanishedFor
                             )
                             messagesList[existingIndex] = msg
                             messageAdapter.notifyItemChanged(existingIndex)
@@ -344,7 +370,10 @@ class socialhomescreenchat : AppCompatActivity() {
                                 deletedAt = apiMsg.deletedAt,
                                 mediaType = apiMsg.mediaType,
                                 mediaUrl = apiMsg.mediaUrl,
-                                mediaCaption = apiMsg.mediaCaption
+                                mediaCaption = apiMsg.mediaCaption,
+                                isVanishMode = apiMsg.isVanishMode,
+                                viewedBy = apiMsg.viewedBy,
+                                vanishedFor = apiMsg.vanishedFor
                             )
                             messagesList.add(msg)
                             messageAdapter.notifyItemInserted(messagesList.size - 1)
@@ -354,6 +383,11 @@ class socialhomescreenchat : AppCompatActivity() {
                         if (apiMsg.timestamp > lastMessageTimestamp) {
                             lastMessageTimestamp = apiMsg.timestamp
                         }
+                    }
+
+                    // Mark new messages as viewed
+                    if (newMessages.isNotEmpty()) {
+                        markMessagesAsViewed()
                     }
                 }
             } catch (e: Exception) {
@@ -368,6 +402,38 @@ class socialhomescreenchat : AppCompatActivity() {
         pollHandler.removeCallbacksAndMessages(null)
         updateOnlineStatus(false)
         screenshotDetector?.stopDetection()
+
+        // Trigger vanish for messages when user exits chat
+        triggerVanishOnExit()
+    }
+
+    // Mark messages as viewed when user is in chat
+    private fun markMessagesAsViewed() {
+        lifecycleScope.launch {
+            try {
+                val request = MarkMessagesViewedRequest(chatId, currentUserId)
+                RetrofitInstance.apiService.markMessagesViewed(request)
+            } catch (e: Exception) {
+                Log.e("socialhomescreenchat", "Error marking messages as viewed", e)
+            }
+        }
+    }
+
+    // Trigger vanish for viewed messages when user exits chat
+    private fun triggerVanishOnExit() {
+        lifecycleScope.launch {
+            try {
+                val request = TriggerVanishRequest(chatId, currentUserId)
+                val response = RetrofitInstance.apiService.triggerVanish(request)
+
+                if (response.isSuccessful && response.body()?.success == true) {
+                    val vanishedCount = response.body()?.data?.vanishedCount ?: 0
+                    Log.d("socialhomescreenchat", "Vanished $vanishedCount messages on exit")
+                }
+            } catch (e: Exception) {
+                Log.e("socialhomescreenchat", "Error triggering vanish", e)
+            }
+        }
     }
 
     // ===== Screenshot notice to chat =====
@@ -455,31 +521,8 @@ class socialhomescreenchat : AppCompatActivity() {
             return
         }
 
-        lifecycleScope.launch {
-            try {
-                val request = SendMessageRequest(
-                    chatId = chatId,
-                    senderId = currentUserId,
-                    senderUsername = currentUsername,
-                    text = "",
-                    mediaType = type,
-                    mediaUrl = base64,
-                    mediaCaption = messageInput.text.toString().trim()
-                )
-
-                val response = RetrofitInstance.apiService.sendMessage(request)
-
-                if (response.isSuccessful && response.body()?.success == true) {
-                    Toast.makeText(this@socialhomescreenchat, "Image sent", Toast.LENGTH_SHORT).show()
-                    messageInput.text.clear()
-                } else {
-                    Toast.makeText(this@socialhomescreenchat, "Failed to send image", Toast.LENGTH_SHORT).show()
-                }
-            } catch (e: Exception) {
-                Log.e("socialhomescreenchat", "Error sending image", e)
-                Toast.makeText(this@socialhomescreenchat, "Error: ${e.message}", Toast.LENGTH_LONG).show()
-            }
-        }
+        val caption = messageInput.text.toString().trim()
+        showVanishModeDialog("", isMedia = true, mediaType = type, mediaUrl = base64, caption = caption)
     }
 
     private fun uriToBase64(uri: Uri, maxSide: Int = 1280, jpegQuality: Int = 80): String? {
@@ -511,26 +554,83 @@ class socialhomescreenchat : AppCompatActivity() {
 
     // ===== Text messages =====
 
-    private fun sendMessage(text: String) {
+    private fun showVanishModeDialog(text: String, isMedia: Boolean = false, mediaType: String = "", mediaUrl: String = "", caption: String = "") {
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
+        dialog.setTitle("Send Message")
+            .setMessage("Would you like to send this message in vanish mode?\n\nVanish mode: Message will disappear from recipient's chat after they view it and close the chat.")
+            .setPositiveButton("Vanish Mode") { _, _ ->
+                if (isMedia) {
+                    sendMediaMessage(mediaType, mediaUrl, caption, vanishMode = true)
+                } else {
+                    sendMessage(text, vanishMode = true)
+                    messageInput.text.clear()
+                }
+            }
+            .setNegativeButton("Normal Mode") { _, _ ->
+                if (isMedia) {
+                    sendMediaMessage(mediaType, mediaUrl, caption, vanishMode = false)
+                } else {
+                    sendMessage(text, vanishMode = false)
+                    messageInput.text.clear()
+                }
+            }
+            .setNeutralButton("Cancel", null)
+            .show()
+    }
+
+    private fun sendMessage(text: String, vanishMode: Boolean = false) {
         lifecycleScope.launch {
             try {
                 val request = SendMessageRequest(
                     chatId = chatId,
                     senderId = currentUserId,
                     senderUsername = currentUsername,
-                    text = text
+                    text = text,
+                    isVanishMode = vanishMode
                 )
 
                 val response = RetrofitInstance.apiService.sendMessage(request)
 
                 if (response.isSuccessful && response.body()?.success == true) {
                     // Message sent successfully - polling will fetch it
+                    if (vanishMode) {
+                        Toast.makeText(this@socialhomescreenchat, "Sent in vanish mode 👻", Toast.LENGTH_SHORT).show()
+                    }
                 } else {
                     val errorMsg = response.body()?.error ?: "Failed to send message"
                     Toast.makeText(this@socialhomescreenchat, errorMsg, Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
                 Log.e("socialhomescreenchat", "Error sending message", e)
+                Toast.makeText(this@socialhomescreenchat, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun sendMediaMessage(mediaType: String, mediaUrl: String, caption: String, vanishMode: Boolean = false) {
+        lifecycleScope.launch {
+            try {
+                val request = SendMessageRequest(
+                    chatId = chatId,
+                    senderId = currentUserId,
+                    senderUsername = currentUsername,
+                    text = "",
+                    mediaType = mediaType,
+                    mediaUrl = mediaUrl,
+                    mediaCaption = caption,
+                    isVanishMode = vanishMode
+                )
+
+                val response = RetrofitInstance.apiService.sendMessage(request)
+
+                if (response.isSuccessful && response.body()?.success == true) {
+                    Toast.makeText(this@socialhomescreenchat, if (vanishMode) "Image sent in vanish mode 👻" else "Image sent", Toast.LENGTH_SHORT).show()
+                    messageInput.text.clear()
+                } else {
+                    Toast.makeText(this@socialhomescreenchat, "Failed to send image", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Log.e("socialhomescreenchat", "Error sending image", e)
                 Toast.makeText(this@socialhomescreenchat, "Error: ${e.message}", Toast.LENGTH_LONG).show()
             }
         }
