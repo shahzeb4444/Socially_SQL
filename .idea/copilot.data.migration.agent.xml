@@ -8,6 +8,8 @@
       <option value="42c1d53f-ccfb-41c8-a5d2-82d8f0c0c63d" />
       <option value="4a255536-10cd-4f3c-9ece-e04b15d46874" />
       <option value="85a99deb-9cc2-4a27-bca5-87ea4fcabf48" />
+      <option value="94205e4b-5bf2-4285-a44c-1c12befe5c8d" />
+      <option value="a925d2ea-448a-480b-a720-6c8ed7e1b780" />
       <option value="acfaa2ff-5a8f-4f23-a7b7-94adbf476964" />
       <option value="ae9ab481-32ec-4a94-a17f-12bd24b83900" />
       <option value="c1bd36a0-0ed8-4e22-861e-6caa06b5e549" />
@@ -55,13 +57,44 @@
             </set>
           </value>
         </entry>
+        <entry key="94205e4b-5bf2-4285-a44c-1c12befe5c8d">
+          <value>
+            <set>
+              <option value="000ceddc-a141-4ea9-bbc1-0d4736a34225" />
+              <option value="00f7c1f2-2729-4ea9-8686-f4b964c54e6d" />
+              <option value="4982e878-9ecc-4110-8dea-5dfe974390a6" />
+              <option value="86a6921f-1550-4054-a89d-c49da1e88f60" />
+              <option value="9e0d7956-6fc4-4a2d-934f-73294c5f35cd" />
+            </set>
+          </value>
+        </entry>
+        <entry key="a925d2ea-448a-480b-a720-6c8ed7e1b780">
+          <value>
+            <set>
+              <option value="b15edc76-5fde-4c0e-9c44-7149506328d1" />
+              <option value="944a1f01-b92c-4b27-97a4-0140683162aa" />
+              <option value="b718fd48-a03a-4aa4-8e46-2ff066f005b8" />
+              <option value="70861d4e-d72b-41f3-9e14-c0694c6200f6" />
+              <option value="0907c7cb-b766-4d15-821a-a27f662980fc" />
+              <option value="3c4d48c8-d6ea-4c8e-ab4b-bd77038842bc" />
+              <option value="ed32a5a4-f31d-4e98-ac5a-fba87915becd" />
+              <option value="02dd0888-0186-4684-9a1d-4e1af4af51db" />
+              <option value="050a0944-c070-4c0a-b984-9ddef9c72d65" />
+              <option value="34e1dd60-cd3f-4055-a437-c569e522dfe2" />
+              <option value="4b0d13c9-80c5-49bb-90c0-846c32f5484a" />
+              <option value="4789f5b2-9889-4368-9452-aa6e269c14b6" />
+              <option value="d2759b61-db82-4e47-8fb9-f630075354ea" />
+              <option value="6d081d7c-67d6-4e1a-a828-7f636800f796" />
+            </set>
+          </value>
+        </entry>
         <entry key="acfaa2ff-5a8f-4f23-a7b7-94adbf476964">
           <value>
             <set>
-              <option value="864c8f93-cec2-4e17-8cf4-f37289058639" />
               <option value="3d981042-7f10-41a5-9c52-bd6795c5a9a1" />
-              <option value="cf161537-264d-4cc0-9703-019edd588c7b" />
               <option value="6bf805f7-c120-4436-855b-04c12ecd96ac" />
+              <option value="864c8f93-cec2-4e17-8cf4-f37289058639" />
+              <option value="cf161537-264d-4cc0-9703-019edd588c7b" />
             </set>
           </value>
         </entry>
@@ -202,17 +235,24 @@
     </option>
     <pendingWorkingSetItems>
       <entry key="11bdc253-74ce-40e0-9925-169978abfd65" />
-      <entry key="acfaa2ff-5a8f-4f23-a7b7-94adbf476964">
+      <entry key="94205e4b-5bf2-4285-a44c-1c12befe5c8d" />
+      <entry key="a925d2ea-448a-480b-a720-6c8ed7e1b780">
         <set>
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/network/ApiService.kt" />
           <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/network/ApiModels.kt" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/network/StoryRepository.kt" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/viewmodels/StoryViewModel.kt" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/socialhomescreen14.kt" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/socialhomescreen12.kt" />
-          <option value="file://$PROJECT_DIR$/STORY_IMPLEMENTATION_GUIDE.md" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/socialhomescreenchat.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/services/MyFirebaseMessagingService.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/HomeActivity.kt" />
+          <option value="file://$PROJECT_DIR$/PUSH_NOTIFICATIONS_MESSAGES_GUIDE.md" />
+          <option value="file://$PROJECT_DIR$/CORRECTED_send_message.php" />
+          <option value="file://$PROJECT_DIR$/DATABASE_DIAGNOSTIC.sql" />
+          <option value="file://$PROJECT_DIR$/DEBUGGING_GUIDE.md" />
+          <option value="file://$PROJECT_DIR$/QUICK_FIX.md" />
+          <option value="file://$PROJECT_DIR$/README_NOTIFICATION_FIX.md" />
+          <option value="file://$PROJECT_DIR$/FIXED_send_message.php" />
+          <option value="file://$PROJECT_DIR$/BUG_FIX_SUMMARY.md" />
         </set>
       </entry>
+      <entry key="acfaa2ff-5a8f-4f23-a7b7-94adbf476964" />
       <entry key="ae9ab481-32ec-4a94-a17f-12bd24b83900" />
       <entry key="c1bd36a0-0ed8-4e22-861e-6caa06b5e549" />
     </pendingWorkingSetItems>

@@ -122,6 +122,30 @@ class HomeActivity : AppCompatActivity() {
             return
         }
 
+        // Handle notification clicks to open chat
+        if (intent.getBooleanExtra("open_chat", false)) {
+            val chatId = intent.getStringExtra("chat_id")
+            val otherUserName = intent.getStringExtra("other_user_name")
+            val otherUserId = intent.getStringExtra("other_user_id")
+
+            if (!chatId.isNullOrEmpty() && !otherUserName.isNullOrEmpty()) {
+                // Open chat activity
+                val chatIntent = Intent(this, com.teamsx.i230610_i230040.socialhomescreenchat::class.java).apply {
+                    putExtra("chatId", chatId)
+                    putExtra("otherUserName", otherUserName)
+                    putExtra("otherUserId", otherUserId ?: "")
+                }
+                startActivity(chatIntent)
+
+                // Clear the intent extras
+                intent.removeExtra("open_chat")
+                intent.removeExtra("chat_id")
+                intent.removeExtra("other_user_name")
+                intent.removeExtra("other_user_id")
+            }
+            return
+        }
+
         if (intent.getBooleanExtra("open_user_profile", false)) {
             val userId = intent.getStringExtra("user_id")
             val username = intent.getStringExtra("username")

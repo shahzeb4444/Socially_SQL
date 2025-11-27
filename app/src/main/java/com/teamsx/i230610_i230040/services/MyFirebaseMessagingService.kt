@@ -82,6 +82,18 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                     putExtra("open_notifications", true)
                     putExtra("notification_type", type)
                 }
+                "new_message" -> {
+                    putExtra("open_chat", true)
+                    putExtra("chat_id", data["chat_id"] ?: "")
+                    putExtra("other_user_name", data["sender_username"] ?: "")
+                    putExtra("other_user_id", data["sender_id"] ?: "")
+                }
+                "screenshot" -> {
+                    putExtra("open_chat", true)
+                    putExtra("chat_id", data["chat_id"] ?: "")
+                    putExtra("other_user_name", data["screenshot_taker_username"] ?: "")
+                    putExtra("other_user_id", data["screenshot_taker_id"] ?: "")
+                }
             }
 
             // Add all data as extras

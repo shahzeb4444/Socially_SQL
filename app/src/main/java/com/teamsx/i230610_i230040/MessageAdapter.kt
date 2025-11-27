@@ -100,7 +100,8 @@ class MessageAdapter(
             }
 
             val edited = if (m.isEdited) " (edited)" else ""
-            timestampText?.text = formatTime(m.timestamp) + edited
+            val vanishIndicator = if (m.isVanishMode) " 👻" else ""
+            timestampText?.text = formatTime(m.timestamp) + edited + vanishIndicator
 
             val longClickTarget: View = mediaContainer ?: messageContainer ?: itemView
             longClickTarget.setOnLongClickListener {
