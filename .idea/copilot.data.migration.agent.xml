@@ -72,22 +72,45 @@
           <value>
             <set>
               <option value="02dd0888-0186-4684-9a1d-4e1af4af51db" />
+              <option value="0370352f-ec5e-49c1-a953-97dde5b83ec3" />
               <option value="050a0944-c070-4c0a-b984-9ddef9c72d65" />
               <option value="0907c7cb-b766-4d15-821a-a27f662980fc" />
               <option value="12372634-a688-40d8-920b-56de8739fc23" />
+              <option value="17eec1f0-709a-4050-9778-f68f18517ac5" />
+              <option value="2435333f-f198-4237-9cb7-2f66ca8f1421" />
               <option value="34e1dd60-cd3f-4055-a437-c569e522dfe2" />
               <option value="3c4d48c8-d6ea-4c8e-ab4b-bd77038842bc" />
+              <option value="443c0a5d-8f16-4cd8-ad9c-ace90cf093ad" />
               <option value="44b89025-0e02-4794-a023-0be22b55f83c" />
               <option value="4789f5b2-9889-4368-9452-aa6e269c14b6" />
               <option value="4b0d13c9-80c5-49bb-90c0-846c32f5484a" />
+              <option value="4d39d01c-4651-4fdf-8fa4-8789b7a02bf7" />
+              <option value="5d322df5-4383-4498-9b39-fb535781c901" />
+              <option value="5deb01b4-8518-4e60-a00e-a136e1cb1a77" />
+              <option value="6c499609-4ead-4e9f-a473-0b13b867e39f" />
+              <option value="6ce165b0-0837-487a-8a69-90ad4ef381ea" />
               <option value="6d081d7c-67d6-4e1a-a828-7f636800f796" />
+              <option value="6dcaaa8f-5695-4782-8911-4814b0e589de" />
               <option value="70861d4e-d72b-41f3-9e14-c0694c6200f6" />
+              <option value="72e7326b-ca5d-45b9-956b-2e699d7eb517" />
+              <option value="77354ab0-be6c-4af5-a2a7-86b7b3f085a2" />
+              <option value="7869e57c-36bf-4d5f-9b9a-e0be3728b616" />
+              <option value="8ba5412b-4ff4-4103-a3ab-d068b0d8cf10" />
+              <option value="8e458c2f-8c1c-4602-9733-70ff7cb46511" />
               <option value="944a1f01-b92c-4b27-97a4-0140683162aa" />
               <option value="a2e89d1e-cc2a-413c-9217-6832fe106d0b" />
+              <option value="a33f42d5-7974-4c43-8d43-089fc635345e" />
+              <option value="af2496d4-b27e-4f26-8d04-7b8df1b068be" />
               <option value="b15edc76-5fde-4c0e-9c44-7149506328d1" />
               <option value="b718fd48-a03a-4aa4-8e46-2ff066f005b8" />
+              <option value="b9c5c425-0d01-45c6-bd8d-2cad46b89b14" />
+              <option value="bcbea493-408c-4441-a4d3-5b8cecd2cc56" />
+              <option value="c1bd6769-63a1-4acf-b30f-bfe8b7cac218" />
               <option value="d2759b61-db82-4e47-8fb9-f630075354ea" />
+              <option value="d7118538-3926-41f1-bce9-e520753f8e0d" />
+              <option value="e5e6866c-e056-4c50-9dde-505c9d8fbb81" />
               <option value="ed32a5a4-f31d-4e98-ac5a-fba87915becd" />
+              <option value="fc69b690-0771-4b35-9334-41f0e4c3b77e" />
             </set>
           </value>
         </entry>
@@ -241,14 +264,44 @@
       <entry key="94205e4b-5bf2-4285-a44c-1c12befe5c8d" />
       <entry key="a925d2ea-448a-480b-a720-6c8ed7e1b780">
         <set>
-          <option value="file://$PROJECT_DIR$/update_status.php" />
-          <option value="file://$PROJECT_DIR$/get_user_status.php" />
-          <option value="file://$PROJECT_DIR$/ADD_ONLINE_STATUS_COLUMNS.sql" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/network/ApiModels.kt" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/network/ApiService.kt" />
+          <option value="file://$PROJECT_DIR$/app/build.gradle.kts" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/database/entity/MessageEntity.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/database/entity/PostEntity.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/database/entity/StoryEntity.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/database/entity/UserEntity.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/database/entity/SyncQueueEntity.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/database/dao/MessageDao.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/database/dao/PostDao.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/database/dao/StoryDao.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/database/dao/UserDao.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/database/dao/SyncQueueDao.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/database/AppDatabase.kt" />
+          <option value="file://$PROJECT_DIR$/OFFLINE_SUPPORT_PHASE1_COMPLETE.md" />
+          <option value="file://$PROJECT_DIR$/SYNC_PROJECT_NOW.md" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/utils/NetworkMonitor.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/repository/MessageRepository.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/worker/SyncWorker.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/worker/SyncManager.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/utils/PicassoConfig.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/SociallyApplication.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/AndroidManifest.xml" />
+          <option value="file://$PROJECT_DIR$/PHASE2_COMPLETE.md" />
+          <option value="file://$PROJECT_DIR$/SYNC_AND_TEST.md" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/database/dao/MessageDao_Fixed.kt" />
+          <option value="file://$PROJECT_DIR$/FIX_MESSAGE_DAO.md" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/database/entity/MessageEntity_Fixed.kt" />
+          <option value="file://$PROJECT_DIR$/FIX_ALL_ERRORS_NOW.md" />
           <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/socialhomescreenchat.kt" />
-          <option value="file://$PROJECT_DIR$/ONLINE_STATUS_SETUP_GUIDE.md" />
-          <option value="file://$PROJECT_DIR$/ONLINE_STATUS_FIXES.md" />
+          <option value="file://$PROJECT_DIR$/PHASE3_COMPLETE.md" />
+          <option value="file://$PROJECT_DIR$/ERROR_ANALYSIS_REPORT.md" />
+          <option value="file://$PROJECT_DIR$/COMPLETE_STATUS_AND_TESTING_GUIDE.md" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/network/ApiModels.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/repository/PostRepository.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/repository/StoryRepository.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/repository/UserRepository.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/socialhomescreen4.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/HomeFragment.kt" />
+          <option value="file://$PROJECT_DIR$/COMPLETE_OFFLINE_VERIFICATION_AND_FAQ.md" />
         </set>
       </entry>
       <entry key="acfaa2ff-5a8f-4f23-a7b7-94adbf476964" />

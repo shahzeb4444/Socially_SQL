@@ -12,7 +12,7 @@ data class RegisterRequest(
     @SerializedName("password") val password: String,
     @SerializedName("username") val username: String,
     @SerializedName("full_name") val fullName: String,
-    @SerializedName("profile_image_url") val profileImageUrl: String? = null
+    @SerializedName("profile_image_base64") val profileImageUrl: String? = null
 )
 
 data class LoginRequest(

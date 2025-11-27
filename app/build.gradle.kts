@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.google.gms.google.services)
+    kotlin("kapt")
 }
 
 android {
@@ -85,6 +86,17 @@ dependencies {
     // ViewModel and LiveData
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.6.1")
+
+    // Room Database (SQLite) for Offline Support
+    implementation("androidx.room:room-runtime:2.6.1")
+    kapt("androidx.room:room-compiler:2.6.1")
+    implementation("androidx.room:room-ktx:2.6.1")
+
+    // WorkManager for Background Sync
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+
+    // Picasso for Image Loading and Caching
+    implementation("com.squareup.picasso:picasso:2.8")
 
     // Testing
     testImplementation(libs.junit)
