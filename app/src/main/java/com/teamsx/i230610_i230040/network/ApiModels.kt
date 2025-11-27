@@ -655,4 +655,21 @@ data class TriggerVanishDataWrapper(
     @SerializedName("message_ids") val messageIds: List<String>
 )
 
+// Get user online status
+data class GetUserStatusRequest(
+    @SerializedName("user_id") val userId: String
+)
+
+data class GetUserStatusResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("data") val data: UserStatusDataWrapper? = null,
+    @SerializedName("error") val error: String? = null
+)
+
+data class UserStatusDataWrapper(
+    @SerializedName("user_id") val userId: String,
+    @SerializedName("is_online") val isOnline: Boolean,
+    @SerializedName("last_seen") val lastSeen: Long
+)
+
 

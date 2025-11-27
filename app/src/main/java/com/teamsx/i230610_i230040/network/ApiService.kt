@@ -112,6 +112,9 @@ interface ApiService {
     @POST("messages/update_status.php")
     suspend fun updateStatus(@Body request: UpdateStatusRequest): Response<UpdateStatusResponse>
 
+    @POST("messages/get_user_status.php")
+    suspend fun getUserStatus(@Body request: GetUserStatusRequest): Response<GetUserStatusResponse>
+
     @POST("messages/poll_new_messages.php")
     suspend fun pollNewMessages(@Body request: PollNewMessagesRequest): Response<PollNewMessagesResponse>
 
