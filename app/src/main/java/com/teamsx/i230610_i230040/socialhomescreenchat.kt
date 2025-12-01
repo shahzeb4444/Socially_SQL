@@ -251,8 +251,13 @@ class socialhomescreenchat : AppCompatActivity() {
         networkMonitor.observe(this) { isOnline ->
             Log.d("socialhomescreenchat", "Network state: ${if (isOnline) "ONLINE" else "OFFLINE"}")
             if (isOnline) {
-                // Sync messages when coming back online
+                // Sync messages when coming back online (fetch from server)
                 syncMessagesWithServer()
+
+                // Trigger immediate sync of pending offline actions (send to server)
+                val syncManager = com.teamsx.i230610_i230040.worker.SyncManager(this)
+                syncManager.triggerImmediateSync()
+                Log.d("socialhomescreenchat", "Triggered immediate sync for pending messages")
             }
         }
     }

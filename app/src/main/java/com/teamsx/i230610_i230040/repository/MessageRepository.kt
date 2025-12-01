@@ -99,6 +99,14 @@ class MessageRepository(private val context: Context) {
         // If online, try to sync immediately
         if (NetworkMonitor.isOnline(context)) {
             trySyncMessage(localMessageId)
+
+            // Also trigger WorkManager sync as backup (in case immediate sync fails silently)
+            try {
+                val syncManager = com.teamsx.i230610_i230040.worker.SyncManager(context)
+                syncManager.triggerImmediateSync()
+            } catch (e: Exception) {
+                android.util.Log.e("MessageRepository", "Failed to trigger sync manager", e)
+            }
         }
 
         messageEntity
@@ -109,7 +117,13 @@ class MessageRepository(private val context: Context) {
      */
     private suspend fun trySyncMessage(localMessageId: String) = withContext(Dispatchers.IO) {
         try {
-            val message = messageDao.getMessageById(localMessageId) ?: return@withContext
+            val message = messageDao.getMessageById(localMessageId)
+            if (message == null) {
+                android.util.Log.e("MessageRepository", "Message not found for sync: $localMessageId")
+                return@withContext
+            }
+
+            android.util.Log.d("MessageRepository", "Attempting immediate sync for message: $localMessageId")
 
             // Update status to syncing
             messageDao.updateSyncStatus(localMessageId, false, "syncing")
@@ -131,6 +145,8 @@ class MessageRepository(private val context: Context) {
             if (response.isSuccessful && response.body()?.success == true) {
                 val serverMessageId = response.body()?.data?.message?.messageId ?: localMessageId
 
+                android.util.Log.d("MessageRepository", "Message synced successfully: $localMessageId -> $serverMessageId")
+
                 // Update with server message ID
                 messageDao.updateMessageId(localMessageId, serverMessageId)
                 messageDao.updateSyncStatus(serverMessageId, true, "synced")
@@ -140,10 +156,13 @@ class MessageRepository(private val context: Context) {
                 queueItem?.let { syncQueueDao.deleteItem(it.id) }
             } else {
                 // Mark as failed
+                val errorMsg = response.body()?.error ?: "HTTP ${response.code()}"
+                android.util.Log.e("MessageRepository", "Immediate sync failed: $errorMsg")
                 messageDao.updateSyncStatus(localMessageId, false, "failed")
             }
         } catch (e: Exception) {
             // Mark as failed
+            android.util.Log.e("MessageRepository", "Exception during immediate sync", e)
             messageDao.updateSyncStatus(localMessageId, false, "failed")
         }
     }

@@ -5,8 +5,10 @@
     <option name="pendingSessionIds">
       <option value="081c03f7-7f20-4f6e-9a88-b8d34297f2fa" />
       <option value="11bdc253-74ce-40e0-9925-169978abfd65" />
+      <option value="2778318a-a29f-4c2d-9db2-a9a79dd591bf" />
       <option value="42c1d53f-ccfb-41c8-a5d2-82d8f0c0c63d" />
       <option value="4a255536-10cd-4f3c-9ece-e04b15d46874" />
+      <option value="6e0af83a-5609-4ee5-8b2b-f718fac9c339" />
       <option value="85a99deb-9cc2-4a27-bca5-87ea4fcabf48" />
       <option value="94205e4b-5bf2-4285-a44c-1c12befe5c8d" />
       <option value="a925d2ea-448a-480b-a720-6c8ed7e1b780" />
@@ -45,6 +47,15 @@
               <option value="d30a2421-f5fe-4a4d-b48e-85f4fe47d6a2" />
               <option value="ee53b438-0748-4816-8861-6ccb23494bdb" />
               <option value="efa1a732-9aaa-42f7-8d84-4e25f9c749d5" />
+            </set>
+          </value>
+        </entry>
+        <entry key="6e0af83a-5609-4ee5-8b2b-f718fac9c339">
+          <value>
+            <set>
+              <option value="1421f246-0f64-451f-b982-91917c134a1a" />
+              <option value="eef3eebd-63f2-45fc-8bb5-ddc17eeb5fbc" />
+              <option value="49f08b46-26e5-4eb1-9006-b7529e1beda5" />
             </set>
           </value>
         </entry>
@@ -261,49 +272,20 @@
     </option>
     <pendingWorkingSetItems>
       <entry key="11bdc253-74ce-40e0-9925-169978abfd65" />
-      <entry key="94205e4b-5bf2-4285-a44c-1c12befe5c8d" />
-      <entry key="a925d2ea-448a-480b-a720-6c8ed7e1b780">
+      <entry key="6e0af83a-5609-4ee5-8b2b-f718fac9c339">
         <set>
-          <option value="file://$PROJECT_DIR$/app/build.gradle.kts" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/database/entity/MessageEntity.kt" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/database/entity/PostEntity.kt" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/database/entity/StoryEntity.kt" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/database/entity/UserEntity.kt" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/database/entity/SyncQueueEntity.kt" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/database/dao/MessageDao.kt" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/database/dao/PostDao.kt" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/database/dao/StoryDao.kt" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/database/dao/UserDao.kt" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/database/dao/SyncQueueDao.kt" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/database/AppDatabase.kt" />
-          <option value="file://$PROJECT_DIR$/OFFLINE_SUPPORT_PHASE1_COMPLETE.md" />
-          <option value="file://$PROJECT_DIR$/SYNC_PROJECT_NOW.md" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/utils/NetworkMonitor.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/socialhomescreenchat.kt" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/SociallyApplication.kt" />
           <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/repository/MessageRepository.kt" />
           <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/worker/SyncWorker.kt" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/worker/SyncManager.kt" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/utils/PicassoConfig.kt" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/SociallyApplication.kt" />
-          <option value="file://$PROJECT_DIR$/app/src/main/AndroidManifest.xml" />
-          <option value="file://$PROJECT_DIR$/PHASE2_COMPLETE.md" />
-          <option value="file://$PROJECT_DIR$/SYNC_AND_TEST.md" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/database/dao/MessageDao_Fixed.kt" />
-          <option value="file://$PROJECT_DIR$/FIX_MESSAGE_DAO.md" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/database/entity/MessageEntity_Fixed.kt" />
-          <option value="file://$PROJECT_DIR$/FIX_ALL_ERRORS_NOW.md" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/socialhomescreenchat.kt" />
-          <option value="file://$PROJECT_DIR$/PHASE3_COMPLETE.md" />
-          <option value="file://$PROJECT_DIR$/ERROR_ANALYSIS_REPORT.md" />
-          <option value="file://$PROJECT_DIR$/COMPLETE_STATUS_AND_TESTING_GUIDE.md" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/network/ApiModels.kt" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/repository/PostRepository.kt" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/repository/StoryRepository.kt" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/repository/UserRepository.kt" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/socialhomescreen4.kt" />
-          <option value="file://$PROJECT_DIR$/app/src/main/java/com/teamsx/i230610_i230040/HomeFragment.kt" />
-          <option value="file://$PROJECT_DIR$/COMPLETE_OFFLINE_VERIFICATION_AND_FAQ.md" />
+          <option value="file://$PROJECT_DIR$/OFFLINE_MESSAGE_SYNC_FIX.md" />
+          <option value="file://$PROJECT_DIR$/TESTING_CHECKLIST.md" />
+          <option value="file://$PROJECT_DIR$/IMPLEMENTATION_SUMMARY.md" />
+          <option value="file://$PROJECT_DIR$/QUICK_START.md" />
         </set>
       </entry>
+      <entry key="94205e4b-5bf2-4285-a44c-1c12befe5c8d" />
+      <entry key="a925d2ea-448a-480b-a720-6c8ed7e1b780" />
       <entry key="acfaa2ff-5a8f-4f23-a7b7-94adbf476964" />
       <entry key="ae9ab481-32ec-4a94-a17f-12bd24b83900" />
       <entry key="c1bd36a0-0ed8-4e22-861e-6caa06b5e549" />
