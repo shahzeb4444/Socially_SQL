@@ -29,10 +29,10 @@ object RetrofitInstance {
     //
     // Current IP: Use 10.0.2.2 for EMULATOR or 192.168.100.6 for PHYSICAL DEVICE
     // CURRENT SETTING: For EMULATOR (change to 192.168.100.6 for physical device)
-    private const val BASE_URL = "http://172.15.77.33/socially_api/endpoints/"
+    private const val BASE_URL = "http://172.15.69.50/socially_api/endpoints/"
 
     // Test URL (publicly accessible for debugging)
-    const val TEST_URL = "http://172.15.77.33/socially_api/test.php"
+    const val TEST_URL = "http://172.15.69.50/socially_api/test.php"
     const val CURRENT_BASE = BASE_URL
 
     // HTTP Logging Interceptor for debugging

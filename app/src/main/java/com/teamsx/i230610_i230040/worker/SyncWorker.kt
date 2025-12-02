@@ -103,17 +103,33 @@ class SyncWorker(
     private suspend fun syncSendMessage(item: com.teamsx.i230610_i230040.database.entity.SyncQueueEntity): Boolean {
         return try {
             val request = gson.fromJson(item.jsonPayload, SendMessageRequest::class.java)
+            Log.d(TAG, "Syncing message: chatId=${request.chatId}, localId=${item.localReferenceId}, text=${request.text.take(20)}")
+
             val response = apiService.sendMessage(request)
 
-            if (response.isSuccessful && response.body()?.success == true) {
-                val serverMessageId = response.body()?.data?.message?.messageId
-                if (serverMessageId != null && serverMessageId != item.localReferenceId) {
-                    // Update local message with server ID
-                    messageDao.updateMessageId(item.localReferenceId, serverMessageId)
+            if (response.isSuccessful) {
+                val body = response.body()
+                Log.d(TAG, "Send message response: success=${body?.success}, error=${body?.error}")
+
+                if (body?.success == true) {
+                    val serverMessageId = body.data?.message?.messageId
+                    Log.d(TAG, "Message synced successfully. Server ID: $serverMessageId")
+
+                    if (serverMessageId != null && serverMessageId != item.localReferenceId) {
+                        // Update local message with server ID
+                        messageDao.updateMessageId(item.localReferenceId, serverMessageId)
+                        messageDao.updateSyncStatus(serverMessageId, true, "synced")
+                    } else {
+                        // Use local ID if server didn't provide new one
+                        messageDao.updateSyncStatus(item.localReferenceId, true, "synced")
+                    }
+                    true
+                } else {
+                    Log.e(TAG, "Send message failed: ${body?.error}")
+                    false
                 }
-                messageDao.updateSyncStatus(serverMessageId ?: item.localReferenceId, true, "synced")
-                true
             } else {
+                Log.e(TAG, "Send message HTTP error: ${response.code()} - ${response.message()}")
                 false
             }
         } catch (e: Exception) {
